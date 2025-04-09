@@ -30,7 +30,7 @@ def show_login_ui():
             margin-top: 1.5rem;
         }
         </style>
-        <div class="login-box">
+        
     """, unsafe_allow_html=True)
 
     st.markdown("## 🔐 Anmeldung zur Feedback-Kategorisierung")
@@ -46,7 +46,7 @@ def show_login_ui():
         else:
             st.error("❌ Falscher Benutzername oder Passwort")
 
-    st.markdown("""<div class="footer-text">© 2025 Feedback Analyzer</div></div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="footer-text">© 2025 Feedback Analyzer</div>""", unsafe_allow_html=True)
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
