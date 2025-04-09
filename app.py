@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import hashlib
 import openai
+import streamlit.components.v1 as components
 
 # ------------- Benutzerverwaltung (Login) ----------------
 USER_CREDENTIALS = {
@@ -60,16 +61,31 @@ def kategorisieren_feedback(feedback, kategorien):
 
 # ----------------- Streamlit App -------------------
 def main():
-    st.title("📊 Kundenfeedback-Kategorisierung")
+    st.set_page_config(page_title="Feedback Analyse", layout="wide")
 
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
 
     if not st.session_state.logged_in:
-        st.subheader("🔐 Login")
-        username = st.text_input("Benutzername")
-        password = st.text_input("Passwort", type="password")
-        login_button = st.button("Login")
+        st.markdown("""
+            <style>
+                .main {background-color: #0f1117; color: #ffffff;}
+                .stTextInput > div > div > input {
+                    background-color: #1e1e2f;
+                    color: white;
+                }
+                .stTextInput > label, .stPassword > label {
+                    color: #ffffff;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown("# ✨ Willkommen zur KI-gestützten Feedbackanalyse")
+        st.markdown("Bitte logge dich ein, um loszulegen.")
+
+        username = st.text_input("👤 Benutzername")
+        password = st.text_input("🔐 Passwort", type="password")
+        login_button = st.button("🚪 Login")
 
         if login_button:
             if check_login(username, password):
@@ -79,7 +95,7 @@ def main():
         return
 
     # Nach Login
-    st.success("Eingeloggt")
+    st.markdown("## 📊 Feedback Kategorisierung auf Basis von GPT oder Regeln")
 
     st.sidebar.header("⚙️ Kategorien verwalten")
     default_kategorien = [
@@ -96,7 +112,7 @@ def main():
     method = st.sidebar.selectbox("Kategorisierungsmethode", ["GPT", "Regelbasiert"])
     api_key = None
     if method == "GPT":
-        api_key = st.sidebar.text_input("🔑 OpenAI API-Key", type="password")
+        api_key = st.sidebar.text_input("🔑 OpenAI API-Key", type="password", key="api", help="Dein OpenAI-Schlüssel wird nicht gespeichert")
 
     uploaded_file = st.file_uploader("📤 Excel-Datei mit Feedback hochladen", type=["xlsx"])
     if uploaded_file:
