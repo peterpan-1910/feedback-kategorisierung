@@ -13,7 +13,51 @@ def check_login(username, password):
     hashed = hashlib.sha256(password.encode()).hexdigest()
     return USER_CREDENTIALS.get(username) == hashed
 
-# ------------- GPT-Kategorisierung (neue API Version >=1.0.0) ----------------
+# ------------- Regelbasierte Kategorisierung (erweitert) --------------
+def kategorisieren_feedback(feedback, kategorien):
+    feedback = feedback.lower()
+
+    if any(word in feedback for word in ["funktion fehlt", "es fehlt", "wäre gut", "sollte möglich sein", "keine sofortüberweisung"]):
+        return "Feature-Wünsche / Kritik"
+    if any(word in feedback for word in ["funktioniert nicht", "geht nicht", "abbruch", "bug", "fehler"]):
+        return "Fehler / Bugs"
+    if any(word in feedback for word in ["übersicht", "unübersichtlich", "struktur verwirrend"]):
+        return "unübersichtlich"
+    if any(word in feedback for word in ["langsam", "lädt", "ewig", "dauert lange"]):
+        return "langsam"
+    if any(word in feedback for word in ["kontakt", "hotline", "anruf", "nicht erreichbar", "niemand erreichbar", "support"]):
+        return "Kundenservice"
+    if any(word in feedback for word in ["ratenkauf", "rückzahlung", "rate", "zurückzahlen"]):
+        return "Rückzahlungsoptionen"
+    if any(word in feedback for word in ["login", "einloggen", "anmeldung", "logout"]):
+        return "Login"
+    if any(word in feedback for word in ["absturz", "app hängt", "stürzt ab"]):
+        return "App abstürze"
+    if any(word in feedback for word in ["tan", "sms tan", "bestätigungscode"]):
+        return "TAN Probleme"
+    if any(word in feedback for word in ["kosten", "gebühr", "zinsen"]):
+        return "Gebühren"
+    if any(word in feedback for word in ["veraltet", "nicht modern", "altmodisch"]):
+        return "UI/UX"
+    if any(word in feedback for word in ["kompliziert", "nicht intuitiv", "nicht verständlich", "nicht selbsterklärend"]):
+        return "Kompliziert / Unklar"
+    if any(word in feedback for word in ["vertrauen", "abzocke", "dubios", "nicht vertrauenswürdig"]):
+        return "Vertrauenswürdigkeit"
+    if any(word in feedback for word in ["english", "englisch", "not in german"]):
+        return "Sprachprobleme"
+    if any(word in feedback for word in ["werbung", "angebot", "promo"]):
+        return "Werbung"
+    if any(word in feedback for word in ["sicherheit", "sicherheitsbedenken", "schutz"]):
+        return "Sicherheit"
+    if any(word in feedback for word in ["tagesgeld", "zins", "geldanlage"]):
+        return "Tagesgeld"
+    if any(word in feedback for word in ["zahlung", "überweisung", "geld senden"]):
+        return "Zahlungsprobleme"
+    if any(word in feedback for word in ["ansprechpartner", "kontaktmöglichkeit", "rückruf"]):
+        return "Kontaktmöglichkeiten"
+    return "Sonstiges"
+
+# ------------- GPT-Kategorisierung (optional bei API-Key) --------------
 def kategorisieren_mit_gpt(feedback, kategorien, api_key):
     openai.api_key = api_key
     try:
@@ -32,32 +76,6 @@ def kategorisieren_mit_gpt(feedback, kategorien, api_key):
         return response.choices[0].message.content.strip()
     except Exception as e:
         return f"Fehler: {str(e)}"
-
-# ------------- Regelbasierte Kategorisierung (Fallback) --------------
-def kategorisieren_feedback(feedback, kategorien):
-    feedback = feedback.lower()
-    for kat in kategorien:
-        if kat.lower() in feedback:
-            return kat
-    if "funktion" in feedback and ("nicht vorhanden" in feedback or "fehlt"):
-        return "Feature-Wünsche / Kritik"
-    elif "nicht funktioniert" in feedback or "geht nicht" in feedback:
-        return "Fehler / Bugs"
-    elif "übersicht" in feedback or "unübersichtlich" in feedback:
-        return "unübersichtlich"
-    elif "langsam" in feedback or "ewig" in feedback:
-        return "langsam"
-    elif "kontakt" in feedback or "niemand erreichbar" in feedback:
-        return "Kundenservice"
-    elif "ratenkauf" in feedback or "rückzahlung" in feedback:
-        return "Rückzahlungsoptionen"
-    elif "login" in feedback or "einloggen" in feedback:
-        return "Login"
-    elif "absturz" in feedback or "hängt" in feedback:
-        return "App abstürze"
-    elif "english" in feedback:
-        return "Nicht-deutsch"
-    return "Sonstiges"
 
 # ----------------- Streamlit App -------------------
 def main():
