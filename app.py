@@ -13,47 +13,47 @@ def check_login(username, password):
     hashed = hashlib.sha256(password.encode()).hexdigest()
     return USER_CREDENTIALS.get(username) == hashed
 
-# ------------- Regelbasierte Kategorisierung (erweitert) --------------
+# ------------- Regelbasierte Kategorisierung (optimiert mit Trainingsdaten) --------------
 def kategorisieren_feedback(feedback, kategorien):
     feedback = feedback.lower()
 
-    if any(word in feedback for word in ["funktion fehlt", "es fehlt", "wäre gut", "sollte möglich sein", "keine sofortüberweisung"]):
+    if any(word in feedback for word in ["funktion fehlt", "es fehlt", "wäre gut", "sollte möglich sein", "keine sofortüberweisung", "nicht verfügbar", "feature fehlt", "nicht vorgesehen"]):
         return "Feature-Wünsche / Kritik"
-    if any(word in feedback for word in ["funktioniert nicht", "geht nicht", "abbruch", "bug", "fehler"]):
+    if any(word in feedback for word in ["funktioniert nicht", "geht nicht", "abbruch", "bug", "fehler", "problem", "hängt sich auf", "störung"]):
         return "Fehler / Bugs"
-    if any(word in feedback for word in ["übersicht", "unübersichtlich", "struktur verwirrend"]):
+    if any(word in feedback for word in ["übersicht", "unübersichtlich", "struktur verwirrend", "layout verwirrend", "nicht klar"]):
         return "unübersichtlich"
-    if any(word in feedback for word in ["langsam", "lädt", "ewig", "dauert lange"]):
+    if any(word in feedback for word in ["langsam", "lädt", "ewig", "dauert lange", "reagiert träge", "hängt"]):
         return "langsam"
-    if any(word in feedback for word in ["kontakt", "hotline", "anruf", "nicht erreichbar", "niemand erreichbar", "support"]):
+    if any(word in feedback for word in ["kontakt", "hotline", "anruf", "nicht erreichbar", "niemand erreichbar", "support", "kundenservice", "rückruf", "telefon", "ansprechperson"]):
         return "Kundenservice"
-    if any(word in feedback for word in ["ratenkauf", "rückzahlung", "rate", "zurückzahlen"]):
+    if any(word in feedback for word in ["ratenkauf", "rückzahlung", "rate", "zurückzahlen", "tilgung", "zahlung pausieren"]):
         return "Rückzahlungsoptionen"
-    if any(word in feedback for word in ["login", "einloggen", "anmeldung", "logout"]):
+    if any(word in feedback for word in ["login", "einloggen", "anmeldung", "logout", "anmeldeproblem", "sitzung"]):
         return "Login"
-    if any(word in feedback for word in ["absturz", "app hängt", "stürzt ab"]):
+    if any(word in feedback for word in ["absturz", "app hängt", "stürzt ab", "app schließt sich", "schmiert ab"]):
         return "App abstürze"
-    if any(word in feedback for word in ["tan", "sms tan", "bestätigungscode"]):
+    if any(word in feedback for word in ["tan", "sms tan", "bestätigungscode", "authentifizierung"]):
         return "TAN Probleme"
-    if any(word in feedback for word in ["kosten", "gebühr", "zinsen"]):
+    if any(word in feedback for word in ["kosten", "gebühr", "zinsen", "preis", "bearbeitungsgebühr"]):
         return "Gebühren"
-    if any(word in feedback for word in ["veraltet", "nicht modern", "altmodisch"]):
+    if any(word in feedback for word in ["veraltet", "nicht modern", "altmodisch", "wie aus 2010", "nicht mehr zeitgemäß"]):
         return "UI/UX"
-    if any(word in feedback for word in ["kompliziert", "nicht intuitiv", "nicht verständlich", "nicht selbsterklärend"]):
+    if any(word in feedback for word in ["kompliziert", "nicht intuitiv", "nicht verständlich", "nicht selbsterklärend", "komplizierte bedienung"]):
         return "Kompliziert / Unklar"
-    if any(word in feedback for word in ["vertrauen", "abzocke", "dubios", "nicht vertrauenswürdig"]):
+    if any(word in feedback for word in ["vertrauen", "abzocke", "dubios", "nicht vertrauenswürdig", "unsicher", "fragwürdig"]):
         return "Vertrauenswürdigkeit"
-    if any(word in feedback for word in ["english", "englisch", "not in german"]):
+    if any(word in feedback for word in ["english", "englisch", "not in german", "sprache falsch"]):
         return "Sprachprobleme"
-    if any(word in feedback for word in ["werbung", "angebot", "promo"]):
+    if any(word in feedback for word in ["werbung", "angebot", "promo", "aktionscode", "gutschein"]):
         return "Werbung"
-    if any(word in feedback for word in ["sicherheit", "sicherheitsbedenken", "schutz"]):
+    if any(word in feedback for word in ["sicherheit", "sicherheitsbedenken", "schutz", "datenleck", "unbefugter zugriff"]):
         return "Sicherheit"
-    if any(word in feedback for word in ["tagesgeld", "zins", "geldanlage"]):
+    if any(word in feedback for word in ["tagesgeld", "zins", "geldanlage", "sparfunktion"]):
         return "Tagesgeld"
-    if any(word in feedback for word in ["zahlung", "überweisung", "geld senden"]):
+    if any(word in feedback for word in ["zahlung", "überweisung", "geld senden", "zahlung geht nicht", "kein transfer"]):
         return "Zahlungsprobleme"
-    if any(word in feedback for word in ["ansprechpartner", "kontaktmöglichkeit", "rückruf"]):
+    if any(word in feedback for word in ["ansprechpartner", "kontaktmöglichkeit", "rückruf", "niemand erreichbar"]):
         return "Kontaktmöglichkeiten"
     return "Sonstiges"
 
@@ -76,88 +76,3 @@ def kategorisieren_mit_gpt(feedback, kategorien, api_key):
         return response.choices[0].message.content.strip()
     except Exception as e:
         return f"Fehler: {str(e)}"
-
-# ----------------- Streamlit App -------------------
-def main():
-    st.set_page_config(page_title="Feedback Analyse", layout="wide")
-
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
-
-    if not st.session_state.logged_in:
-        st.markdown("""
-            <style>
-                .main {background-color: #0f1117; color: #ffffff;}
-                .stTextInput > div > div > input {
-                    background-color: #1e1e2f;
-                    color: white;
-                }
-                .stTextInput > label, .stPassword > label {
-                    color: #ffffff;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-
-        st.markdown("# ✨ Willkommen zur KI-gestützten Feedbackanalyse")
-        st.markdown("Bitte logge dich ein, um loszulegen.")
-
-        username = st.text_input("👤 Benutzername")
-        password = st.text_input("🔐 Passwort", type="password")
-        login_button = st.button("🚪 Login")
-
-        if login_button:
-            if check_login(username, password):
-                st.session_state.logged_in = True
-            else:
-                st.error("Falscher Benutzername oder Passwort")
-        return
-
-    # Nach Login
-    st.markdown("## 📊 Feedback Kategorisierung auf Basis von GPT oder Regeln")
-
-    st.sidebar.header("⚙️ Kategorien verwalten")
-    default_kategorien = [
-        "Login", "TAN Probleme", "App abstürze", "Fehler / Bugs",
-        "Rückzahlungsoptionen", "Zahlungsprobleme", "Kompliziert / Unklar",
-        "Feature-Wünsche / Kritik", "Sprachprobleme", "Sicherheit", "Tagesgeld",
-        "Werbung", "UI/UX", "unübersichtlich", "langsam", "Kundenservice",
-        "Kontaktmöglichkeiten", "Vertrauenswürdigkeit", "Gebühren", "Sonstiges"
-    ]
-
-    kategorien = st.sidebar.text_area("Kategorien (eine pro Zeile)", "\n".join(default_kategorien)).splitlines()
-
-    st.sidebar.markdown("---")
-    method = st.sidebar.selectbox("Kategorisierungsmethode", ["GPT", "Regelbasiert"])
-    api_key = None
-    if method == "GPT":
-        api_key = st.sidebar.text_input("🔑 OpenAI API-Key", type="password", key="api", help="Dein OpenAI-Schlüssel wird nicht gespeichert")
-
-    uploaded_file = st.file_uploader("📤 Excel-Datei mit Feedback hochladen", type=["xlsx"])
-    if uploaded_file:
-        df = pd.read_excel(uploaded_file)
-        if 'Feedback' not in df.columns:
-            st.error("Die Excel-Datei muss eine Spalte 'Feedback' enthalten.")
-            return
-
-        kategorien_clean = [k.strip() for k in kategorien if k.strip() != ""]
-
-        if method == "GPT" and api_key:
-            st.info("Kategorisierung läuft. Bitte etwas Geduld...")
-            progress_bar = st.progress(0)
-            kategorien_list = []
-            for i, feedback in enumerate(df['Feedback']):
-                kategorie = kategorisieren_mit_gpt(str(feedback), kategorien_clean, api_key)
-                kategorien_list.append(kategorie)
-                progress_bar.progress((i + 1) / len(df))
-            df['Kategorie'] = kategorien_list
-        else:
-            df['Kategorie'] = df['Feedback'].apply(lambda x: kategorisieren_feedback(str(x), kategorien_clean))
-
-        st.success("Kategorisierung abgeschlossen!")
-        st.dataframe(df[['Feedback', 'Kategorie']])
-
-        csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 Ergebnisse als CSV herunterladen", csv, "kategorisiertes_feedback.csv", "text/csv")
-
-if __name__ == '__main__':
-    main()
