@@ -69,10 +69,11 @@ def main():
         st.subheader("🔐 Login")
         username = st.text_input("Benutzername")
         password = st.text_input("Passwort", type="password")
-        if st.button("Login"):
+        login_button = st.button("Login")
+
+        if login_button:
             if check_login(username, password):
                 st.session_state.logged_in = True
-                st.experimental_rerun()
             else:
                 st.error("Falscher Benutzername oder Passwort")
         return
