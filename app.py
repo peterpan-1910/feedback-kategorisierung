@@ -57,7 +57,7 @@ if not st.session_state.logged_in:
 
 # ------------------ Nach dem Login ------------------
  
- st.title("📊 Feedback Kategorisierung (regelbasiert)")
+st.title("📊 Feedback Kategorisierung (regelbasiert)")
  
  # Sidebar – Kategorieverwaltung
  st.sidebar.header("Kategorien")
