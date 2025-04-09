@@ -56,9 +56,6 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ------------------ Nach dem Login ------------------
-
-st.title("📊 Regelbasierte Feedback-Kategorisierung")
-# ------------------ Nach dem Login ------------------
  
  st.title("📊 Feedback Kategorisierung (regelbasiert)")
  
