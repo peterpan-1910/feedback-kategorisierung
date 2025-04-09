@@ -5,8 +5,7 @@ import openai
 
 # ------------- Benutzerverwaltung (Login) ----------------
 USER_CREDENTIALS = {
-    "admin": hashlib.sha256("passwort123".encode()).hexdigest(),
-    "user1": hashlib.sha256("feedback2024".encode()).hexdigest()
+    "admin2025": hashlib.sha256("admin2025".encode()).hexdigest()
 }
 
 def check_login(username, password):
