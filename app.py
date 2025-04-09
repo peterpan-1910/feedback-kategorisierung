@@ -30,7 +30,7 @@ def kategorisieren_mit_gpt(feedback, kategorien, api_key):
         )
         return response.choices[0].message['content'].strip()
     except Exception as e:
-        return "Fehler: GPT nicht erreichbar"
+        return f"Fehler: {str(e)}"
 
 # ------------- Regelbasierte Kategorisierung (Fallback) --------------
 def kategorisieren_feedback(feedback, kategorien):
