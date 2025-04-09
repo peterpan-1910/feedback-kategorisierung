@@ -108,7 +108,14 @@ def main():
         kategorien_clean = [k.strip() for k in kategorien if k.strip() != ""]
 
         if method == "GPT" and api_key:
-            df['Kategorie'] = df['Feedback'].apply(lambda x: kategorisieren_mit_gpt(str(x), kategorien_clean, api_key))
+            st.info("Kategorisierung läuft. Bitte etwas Geduld...")
+            progress_bar = st.progress(0)
+            kategorien_list = []
+            for i, feedback in enumerate(df['Feedback']):
+                kategorie = kategorisieren_mit_gpt(str(feedback), kategorien_clean, api_key)
+                kategorien_list.append(kategorie)
+                progress_bar.progress((i + 1) / len(df))
+            df['Kategorie'] = kategorien_list
         else:
             df['Kategorie'] = df['Feedback'].apply(lambda x: kategorisieren_feedback(str(x), kategorien_clean))
 
