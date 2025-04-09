@@ -12,22 +12,23 @@ def check_login(username, password):
     hashed = hashlib.sha256(password.encode()).hexdigest()
     return USER_CREDENTIALS.get(username) == hashed
 
-# ------------- GPT-Kategorisierung ----------------
+# ------------- GPT-Kategorisierung (neue API Version >=1.0.0) ----------------
 def kategorisieren_mit_gpt(feedback, kategorien, api_key):
     openai.api_key = api_key
     try:
+        client = openai.OpenAI(api_key=api_key)
         prompt = f"""
         Du bist ein System zur Textklassifikation. Ordne das folgende deutsche Kundenfeedback genau einer dieser Kategorien zu:
         {', '.join(kategorien)}.
         Feedback: \"{feedback}\"
         Antworte nur mit der Kategorie (ohne weitere Erklärungen).
         """
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=20
         )
-        return response.choices[0].message['content'].strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"Fehler: {str(e)}"
 
