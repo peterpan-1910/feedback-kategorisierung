@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import hashlib
-import openai
-import streamlit.components.v1 as components
 
 # ------------- Benutzerverwaltung (Login) ----------------
 USER_CREDENTIALS = {
@@ -13,68 +11,47 @@ def check_login(username, password):
     hashed = hashlib.sha256(password.encode()).hexdigest()
     return USER_CREDENTIALS.get(username) == hashed
 
-# --------- Login UI im Stil der mobilen Fitness-App ----------
+# --------- Minimalistisches Login UI ----------
 def show_login_ui():
     st.markdown("""
         <style>
-        body {
-            background-color: #f3f3f3;
-        }
-        .login-container {
+        .login-box {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 90vh;
-            background: linear-gradient(to bottom right, #8B0E47, #360033);
-            border-radius: 0;
-            color: white;
+            height: 100vh;
+            background: #f9f9f9;
         }
-        .login-box {
+        .login-form {
             background-color: #ffffff;
-            border-radius: 1rem;
-            padding: 2.5rem;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
             width: 100%;
-            max-width: 370px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
         }
-        .login-box h2 {
-            color: #8B0E47;
+        .login-form h2 {
             text-align: center;
-            font-weight: 800;
-        }
-        .stTextInput > div > div > input,
-        .stPassword > div > div > input {
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            border: 1px solid #ddd;
-        }
-        .login-button button {
-            background: linear-gradient(to right, #C62B50, #610061);
-            color: white;
             font-weight: 600;
-            width: 100%;
-            margin-top: 1.5rem;
-            height: 3rem;
-            border-radius: 2rem;
-            border: none;
-            font-size: 1rem;
+            color: #333;
+            margin-bottom: 1.5rem;
         }
         .footer-text {
             text-align: center;
             font-size: 0.85rem;
-            color: white;
-            margin-top: 2rem;
+            color: #aaa;
+            margin-top: 1.5rem;
         }
         </style>
-        <div class="login-container">
-            <div class="login-box">
-                <h2>Welcome Back</h2>
+        <div class="login-box">
+            <div class="login-form">
+                <h2>Feedback Kategorisierung</h2>
     """, unsafe_allow_html=True)
 
-    username = st.text_input("📧 Email oder Benutzername")
-    password = st.text_input("🔑 Passwort", type="password")
-    login_button = st.button("SIGN IN")
+    username = st.text_input("Benutzername")
+    password = st.text_input("Passwort", type="password")
+    login_button = st.button("Anmelden")
 
     if login_button:
         if check_login(username, password):
@@ -83,7 +60,7 @@ def show_login_ui():
             st.error("❌ Falscher Benutzername oder Passwort")
 
     st.markdown("""</div>
-        <div class="footer-text">Noch keinen Account? <b>Registrierung auf Anfrage</b></div>
+        <div class="footer-text">© 2025 Feedback Analyzer</div>
         </div>""", unsafe_allow_html=True)
 
 if "logged_in" not in st.session_state:
@@ -95,11 +72,12 @@ if not st.session_state.logged_in:
 
 # ------------------ Nach dem Login ------------------
 
-st.title("📊 Feedback Kategorisierung mit Regeln oder GPT")
+st.title("📊 Feedback Kategorisierung (regelbasiert)")
 
-# Auswahl der Methode
-method = st.sidebar.selectbox("Kategorisierungsmethode", ["Regelbasiert", "GPT"])
-kategorien = st.sidebar.text_area("Kategorien (eine pro Zeile)", """
+# Sidebar – Kategorieverwaltung
+st.sidebar.header("Kategorien")
+st.sidebar.markdown("<style>textarea { height: 400px !important; }</style>", unsafe_allow_html=True)
+kategorien = st.sidebar.text_area("(eine pro Zeile)", """
 Login
 TAN Probleme
 App abstürze
@@ -122,51 +100,49 @@ Gebühren
 Sonstiges
 """).splitlines()
 
-api_key = None
-if method == "GPT":
-    api_key = st.sidebar.text_input("🔑 OpenAI API-Key", type="password", help="Wird nicht gespeichert")
+# Regel-Editor (optional)
+st.sidebar.subheader("Kategorie-Regel ergänzen")
+new_keyword = st.sidebar.text_input("Schlüsselwort")
+selected_category = st.sidebar.selectbox("Zielkategorie", kategorien)
+if st.sidebar.button("Regel hinzufügen"):
+    st.session_state.setdefault("custom_rules", {}).setdefault(selected_category, []).append(new_keyword.lower())
+    st.sidebar.success(f"Regel hinzugefügt für '{selected_category}': {new_keyword}")
 
 # Datei-Upload
 uploaded_file = st.file_uploader("📤 Excel-Datei mit Feedback hochladen", type=["xlsx"])
 
-# Regelbasierte Kategorisierung (ausgebaut)
-def kategorisieren_feedback(text):
-    text = text.lower()
-    if any(w in text for w in ["funktion fehlt", "wäre gut", "nicht vorgesehen", "keine sofortüberweisung"]): return "Feature-Wünsche / Kritik"
-    if any(w in text for w in ["funktioniert nicht", "bug", "problem", "fehler"]): return "Fehler / Bugs"
-    if any(w in text for w in ["übersicht", "unübersichtlich", "nicht klar"]): return "unübersichtlich"
-    if any(w in text for w in ["langsam", "lädt", "ewig"]): return "langsam"
-    if any(w in text for w in ["kontakt", "hotline", "rückruf", "telefon", "support"]): return "Kundenservice"
-    if any(w in text for w in ["rückzahlung", "ratenkauf", "tilgung"]): return "Rückzahlungsoptionen"
-    if any(w in text for w in ["login", "einloggen", "anmeldung"]): return "Login"
-    if any(w in text for w in ["absturz", "hängt", "schließt sich"]): return "App abstürze"
-    if any(w in text for w in ["tan", "bestätigungscode"]): return "TAN Probleme"
-    if any(w in text for w in ["gebühr", "zinsen"]): return "Gebühren"
-    if any(w in text for w in ["veraltet", "nicht modern"]): return "UI/UX"
-    if any(w in text for w in ["kompliziert", "nicht verständlich"]): return "Kompliziert / Unklar"
-    if any(w in text for w in ["vertrauen", "abzocke", "unsicher"]): return "Vertrauenswürdigkeit"
-    if any(w in text for w in ["english", "englisch"]): return "Sprachprobleme"
-    if any(w in text for w in ["werbung", "promo"]): return "Werbung"
-    if any(w in text for w in ["sicherheit", "schutz"]): return "Sicherheit"
-    if any(w in text for w in ["tagesgeld", "zins"]): return "Tagesgeld"
-    if any(w in text for w in ["zahlung", "überweisung"]): return "Zahlungsprobleme"
-    if any(w in text for w in ["ansprechpartner", "rückruf"]): return "Kontaktmöglichkeiten"
-    return "Sonstiges"
-
-# GPT-Methode
+# Regelbasierte Kategorisierung
 @st.cache_data(show_spinner=False)
-def kategorisieren_mit_gpt(feedback, kategorien, api_key):
-    openai.api_key = api_key
-    try:
-        client = openai.OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": f"Ordne das Feedback einer dieser Kategorien zu: {', '.join(kategorien)}. Feedback: '{feedback}'"}],
-            max_tokens=20
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        return f"Fehler: {str(e)}"
+def kategorisieren_feedback(text, custom_rules):
+    text = text.lower()
+    rule_map = {
+        "Feature-Wünsche / Kritik": ["funktion fehlt", "wäre gut", "nicht vorgesehen", "keine sofortüberweisung", "nicht verfügbar", "feature fehlt", "nicht vorhanden", "funktion sollte"],
+        "Fehler / Bugs": ["funktioniert nicht", "bug", "problem", "fehler", "geht nicht", "nicht möglich", "technisch defekt", "abbruch", "bricht ab"],
+        "unübersichtlich": ["übersicht", "unübersichtlich", "nicht klar", "zu viel", "durcheinander", "nicht durchblickbar", "nichts gefunden"],
+        "langsam": ["langsam", "lädt", "ewig", "dauert lange", "träge", "verzögert", "hängt", "nicht geladen"],
+        "Kundenservice": ["kontakt", "hotline", "rückruf", "telefon", "support", "ansprechpartner", "niemand erreichbar", "keine antwort"],
+        "Rückzahlungsoptionen": ["rückzahlung", "ratenkauf", "tilgung", "zurückzahlen", "raten", "teilzahlung", "zahlungspause"],
+        "Login": ["login", "einloggen", "anmeldung", "passwort", "verbindung", "login nicht möglich", "anmelden"],
+        "App abstürze": ["absturz", "hängt", "schließt sich", "crasht", "app reagiert nicht", "abgestürzt"],
+        "TAN Probleme": ["tan", "bestätigungscode", "sms", "code kommt nicht", "verifikation", "authentifizierung"],
+        "Gebühren": ["gebühr", "zinsen", "bearbeitungsgebühr", "kosten", "preis", "nicht kostenlos"],
+        "UI/UX": ["veraltet", "nicht modern", "altmodisch", "design 90er", "nicht mehr zeitgemäß", "unmodern"],
+        "Kompliziert / Unklar": ["kompliziert", "nicht verständlich", "nicht intuitiv", "nicht selbsterklärend", "schwierig", "nicht erklärt"],
+        "Vertrauenswürdigkeit": ["vertrauen", "abzocke", "unsicher", "zweifel", "nicht vertrauenswürdig", "datenschutz", "datenweitergabe"],
+        "Sprachprobleme": ["english", "englisch", "not in german", "sprache falsch", "in englisch", "nicht auf deutsch"],
+        "Werbung": ["werbung", "promo", "angebot", "rabatt", "gutschein", "aktionscode"],
+        "Sicherheit": ["sicherheit", "schutz", "zugriff", "unsicher", "sicherheitsproblem", "sicherheitsbedenken", "datenleck"],
+        "Tagesgeld": ["tagesgeld", "zins", "geldanlage", "sparkonto", "verzinsung", "anlage"],
+        "Zahlungsprobleme": ["zahlung", "überweisung", "geld senden", "transfer", "keine buchung", "zahlung nicht möglich"],
+        "Kontaktmöglichkeiten": ["ansprechpartner", "kontaktmöglichkeit", "rückruf", "keine meldung", "niemand reagiert"]
+    }
+    # Ergänze mit individuellen Regeln
+    for k, v in custom_rules.items():
+        rule_map.setdefault(k, []).extend(v)
+    for kategorie, schluessel in rule_map.items():
+        if any(s in text for s in schluessel):
+            return kategorie
+    return "Sonstiges"
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
@@ -174,15 +150,18 @@ if uploaded_file:
         st.error("Die Datei benötigt eine Spalte namens 'Feedback'")
     else:
         with st.spinner("Analysiere Feedback..."):
-            if method == "Regelbasiert":
-                df['Kategorie'] = df['Feedback'].astype(str).apply(kategorisieren_feedback)
-            elif method == "GPT" and api_key:
-                df['Kategorie'] = df['Feedback'].astype(str).apply(lambda x: kategorisieren_mit_gpt(x, kategorien, api_key))
-            else:
-                st.warning("Bitte gültigen API-Key eingeben")
+            rules = st.session_state.get("custom_rules", {})
+            df['Kategorie'] = df['Feedback'].astype(str).apply(lambda x: kategorisieren_feedback(x, rules))
 
         st.success("Analyse abgeschlossen")
         st.dataframe(df[['Feedback', 'Kategorie']])
 
+        # Downloads
         csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 Ergebnisse als CSV herunterladen", csv, "kategorisiertes_feedback.csv", "text/csv")
+        excel_io = pd.ExcelWriter("output.xlsx", engine="openpyxl")
+        df.to_excel(excel_io, index=False, sheet_name="Kategorisiert")
+        excel_io.close()
+
+        st.download_button("📥 Download als CSV", csv, "kategorisiertes_feedback.csv", "text/csv")
+        with open("output.xlsx", "rb") as f:
+            st.download_button("📥 Download als Excel", f.read(), "kategorisiertes_feedback.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
