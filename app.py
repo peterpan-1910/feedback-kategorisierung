@@ -46,7 +46,7 @@ def show_login_ui():
         else:
             st.error("❌ Falscher Benutzername oder Passwort")
 
-    st.markdown("""<div class="footer-text">© 2025 Feedback Analyzer</div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="footer-text">© 2025 Feedback Analyzer<br>Version 1.0.0</div>""", unsafe_allow_html=True)
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
