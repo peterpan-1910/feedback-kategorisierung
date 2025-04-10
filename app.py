@@ -33,8 +33,7 @@ def show_login_ui():
     password = st.text_input("🔑 Passwort", type="password")
     login_button = st.button("🚀 Loslegen")
 
-    if login_button:
-        if check_login(username, password):
+    if login_button and check_login(username, password):
             st.session_state.logged_in = True
         else:
             st.error("❌ Falscher Benutzername oder Passwort")
@@ -138,7 +137,8 @@ else:
     all_rules = default_rules
 
 for cat, terms in sorted(all_rules.items()):
-    with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
+    terms = list(set(terms))  # Duplikate sicher entfernen und vollständige Liste anzeigen
+    with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=True):
         updated_terms = []
         for term in sorted(set(terms)):
             col1, col2, col3 = st.columns([4, 1, 1])
