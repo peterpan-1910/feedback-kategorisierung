@@ -96,7 +96,7 @@ if menu == "Regeln lernen":
     with st.expander("✏️ Schlüsselwörter verwalten", expanded=False):
         if all_rules:
             for cat, terms in sorted(all_rules.items()):
-                st.markdown(f"#### {cat}")
+                with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
             updated_terms = []
             for term in sorted(set(terms)):
                 col1, col2, col3 = st.columns([4, 1, 1])
