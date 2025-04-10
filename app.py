@@ -93,11 +93,15 @@ else:
 
 st.subheader("🗂️ Kategorien und zugehörige Schlüsselwörter")
 rules_file = "custom_rules.json"
+default_rules = all_rules.copy() if 'all_rules' in globals() else {}
 if os.path.exists(rules_file):
     with open(rules_file, "r") as f:
-        all_rules = json.load(f)
+        loaded_rules = json.load(f)
+    for key, value in default_rules.items():
+        loaded_rules.setdefault(key, value)
+    all_rules = loaded_rules
 else:
-    all_rules = {}
+    all_rules = default_rules
 
 for cat, terms in sorted(all_rules.items()):
     with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
