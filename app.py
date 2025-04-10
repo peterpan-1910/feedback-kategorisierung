@@ -3,6 +3,8 @@ import pandas as pd
 import hashlib
 import json
 import os
+import re
+import datetime
 
 # ------------------ Hilfsfunktionen ------------------
 @st.cache_data(show_spinner=False)
@@ -45,7 +47,7 @@ def show_login_ui():
     if login_button:
         if check_login(username, password):
             st.session_state.logged_in = True
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("❌ Falscher Benutzername oder Passwort")
 
@@ -81,31 +83,30 @@ with st.expander("📚 Aktive Kategorien & Anzahl der Keywords", expanded=False)
         st.info("Noch keine Kategorien vorhanden.")
 
 st.subheader("🗂️ Kategorien und zugehörige Schlüsselwörter")
-if os.path.exists(rules_file):
-    with open(rules_file, "r") as f:
-        loaded_rules = json.load(f)
-    for key, value in all_rules.items():
-        loaded_rules.setdefault(key, value)
-    all_rules = loaded_rules
-
+changes_detected = False
 for cat, terms in sorted(all_rules.items()):
     terms = list(set(terms))
     with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
         updated_terms = []
-        for term in sorted(set(terms)):
+        for i, term in enumerate(sorted(set(terms))):
             col1, col2, col3 = st.columns([4, 1, 1])
-            new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
+            new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}_{i}")
             if new_term != term:
                 updated_terms.append(new_term.lower())
+                changes_detected = True
             else:
                 updated_terms.append(term)
-            if col2.button("↩️", key=f"reset_{cat}_{term}"):
+            if col2.button("↩️", key=f"reset_{cat}_{term}_{i}"):
                 updated_terms.append(term)
-            if col3.button("❌", key=f"delete_{cat}_{term}"):
+                changes_detected = True
+            if col3.button("❌", key=f"delete_{cat}_{term}_{i}"):
                 terms.remove(term)
+                changes_detected = True
         all_rules[cat] = list(set(updated_terms))
-        with open(rules_file, "w") as f:
-            json.dump(all_rules, f, indent=2)
+
+if changes_detected:
+    with open(rules_file, "w") as f:
+        json.dump(all_rules, f, indent=2)
 
 st.markdown("---")
 
@@ -117,7 +118,7 @@ if st.button("✅ Regel speichern") and new_keyword:
     with open(rules_file, "w") as f:
         json.dump(all_rules, f, indent=2)
     st.success(f"Regel gespeichert für '{selected_category}': {new_keyword}")
-    st.experimental_rerun()
+    st.rerun()
 
 # ------------------ Regel-Lernen ------------------
 
@@ -135,9 +136,8 @@ if menu == "Regeln lernen":
         for feedback in df_learn['Feedback'].astype(str):
             text = feedback.lower()
             if kategorisieren_feedback(text, all_rules) == "Sonstiges":
-                for word in text.split():
-                    if len(word) > 3 and word not in unmatched_words:
-                        unmatched_words[word] = unmatched_words.get(word, 0) + 1
+                for word in re.findall(r'\b\w{4,}\b', text):
+                    unmatched_words[word] = unmatched_words.get(word, 0) + 1
 
         suggestions = sorted(unmatched_words.items(), key=lambda x: x[1], reverse=True)[:30]
         st.markdown("### 🔍 Häufige unbekannte Wörter aus 'Sonstiges'")
@@ -160,12 +160,11 @@ if menu == "Regeln lernen":
             if selected != "Ignorieren":
                 all_rules[selected].append(word)
                 with open("rule_log.csv", "a", encoding="utf-8") as log:
-                    import datetime
                     log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}\n")
                 with open(rules_file, "w") as f:
                     json.dump(all_rules, f, indent=2)
                 st.success(f"'{word}' wurde der Kategorie '{selected}' hinzugefügt")
-                st.experimental_rerun()
+                st.rerun()
 
     if os.path.exists("rule_log.csv"):
         with open("rule_log.csv", "rb") as log_file:
