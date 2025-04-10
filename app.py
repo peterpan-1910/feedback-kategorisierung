@@ -120,15 +120,18 @@ if uploaded_file:
         st.subheader("📊 Verteilung der Kategorien")
         chart_data = df['Kategorie'].value_counts(normalize=True).reset_index()
         chart_data.columns = ['Kategorie', 'Anteil']
-chart_data['Anteil'] = chart_data['Anteil'] * 100
+        chart_data['Anteil'] = chart_data['Anteil'] * 100
+
         import matplotlib.pyplot as plt
-fig, ax = plt.subplots(figsize=(6, len(chart_data) * 0.4))
-chart_data_sorted = chart_data.sort_values(by="Anzahl")
-ax.barh(chart_data_sorted['Kategorie'], chart_data_sorted['Anteil'])
-ax.set_xlabel("Anteil (%)")
-ax.set_ylabel("Kategorie")
-ax.set_title("Verteilung der Kategorien")
-st.pyplot(fig)
+        fig, ax = plt.subplots(figsize=(6, len(chart_data) * 0.4))
+        chart_data_sorted = chart_data.sort_values(by="Anteil")
+        ax.barh(chart_data_sorted['Kategorie'], chart_data_sorted['Anteil'])
+        ax.set_xlabel("Anteil (%)")
+        ax.set_ylabel("Kategorie")
+        ax.set_title("Verteilung der Kategorien")
+        for i, v in enumerate(chart_data_sorted['Anteil']):
+            ax.text(v + 0.5, i, f"{v:.1f}%", va='center')
+        st.pyplot(fig)
 
         # Downloads
         csv = df.to_csv(index=False).encode('utf-8')
