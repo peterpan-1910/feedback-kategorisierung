@@ -60,6 +60,47 @@ if not st.session_state.logged_in:
 st.title("📊 Regelbasierte Feedback-Kategorisierung")
 
 # Sidebar – Kategorieverwaltung
+
+# Anzeige und Verwaltung gespeicherter Regeln
+st.sidebar.subheader("🔍 Bestehende Regeln anzeigen & löschen")
+import json
+rules_file = "custom_rules.json"
+if st.sidebar.checkbox("📂 Regeln anzeigen"):
+    try:
+        with open(rules_file, "r") as f:
+            all_rules = json.load(f)
+        for cat, terms in all_rules.items():
+            st.sidebar.markdown(f"**{cat}**")
+            for term in sorted(set(terms)):
+                col1, col2 = st.sidebar.columns([5, 1])
+                edit_term = col1.text_input(label="", value=term, key=f"edit_{cat}_{term}")
+                if edit_term != term and edit_term.strip() != "":
+                    # Rücksetzen ermöglichen
+                    if 'original_rules' not in st.session_state:
+                        st.session_state.original_rules = {}
+                    st.session_state.original_rules.setdefault(cat, {})[term] = edit_term
+                    all_rules[cat].remove(term)
+                    all_rules[cat].append(edit_term.lower())
+                    with open(rules_file, "w") as f:
+                        json.dump(all_rules, f)
+                    st.experimental_rerun()
+                if term in st.session_state.get('original_rules', {}).get(cat, {}):
+                    if col1.button("↩️ Rückgängig", key=f"reset_{cat}_{term}"):
+                        original = term
+                        updated = st.session_state.original_rules[cat][term]
+                        all_rules[cat].remove(updated)
+                        all_rules[cat].append(original)
+                        del st.session_state.original_rules[cat][term]
+                        with open(rules_file, "w") as f:
+                            json.dump(all_rules, f)
+                        st.experimental_rerun()
+                if col2.button("❌", key=f"del_{cat}_{term}"):
+                    all_rules[cat].remove(term)
+                    with open(rules_file, "w") as f:
+                        json.dump(all_rules, f)
+                    st.experimental_rerun()
+    except Exception as e:
+        st.sidebar.warning(f"Regeln konnten nicht geladen werden: {e}")
 st.sidebar.header("Kategorien")
 st.sidebar.markdown("<style>textarea { height: 400px !important; }</style>", unsafe_allow_html=True)
 kategorien = st.sidebar.text_area("(eine pro Zeile)", """
@@ -90,6 +131,22 @@ st.sidebar.subheader("Kategorie-Regel ergänzen")
 new_keyword = st.sidebar.text_input("Schlüsselwort")
 selected_category = st.sidebar.selectbox("Zielkategorie", kategorien)
 if st.sidebar.button("Regel hinzufügen"):
+    import json, os
+    rules_file = "custom_rules.json"
+    st.session_state.setdefault("custom_rules", {}).setdefault(selected_category, []).append(new_keyword.lower())
+    # Versuche bestehende Datei zu laden
+    try:
+        if os.path.exists(rules_file):
+            with open(rules_file, "r") as f:
+                saved_rules = json.load(f)
+        else:
+            saved_rules = {}
+        saved_rules.setdefault(selected_category, []).append(new_keyword.lower())
+        with open(rules_file, "w") as f:
+            json.dump(saved_rules, f)
+    except Exception as e:
+        st.sidebar.warning(f"Fehler beim Speichern der Regel: {e}")
+    st.sidebar.success(f"Regel hinzugefügt für '{selected_category}': {new_keyword}")
     st.session_state.setdefault("custom_rules", {}).setdefault(selected_category, []).append(new_keyword.lower())
     st.sidebar.success(f"Regel hinzugefügt für '{selected_category}': {new_keyword}")
 
@@ -135,7 +192,14 @@ if uploaded_file:
         st.error("Die Datei benötigt eine Spalte namens 'Feedback'")
     else:
         with st.spinner("Analysiere Feedback..."):
-            rules = st.session_state.get("custom_rules", {})
+            import json
+rules_file = "custom_rules.json"
+try:
+    with open(rules_file, "r") as f:
+        saved_rules = json.load(f)
+except:
+    saved_rules = {}
+rules = {**saved_rules, **st.session_state.get("custom_rules", {})}
             df['Kategorie'] = df['Feedback'].astype(str).apply(lambda x: kategorisieren_feedback(x, rules))
 
         st.success("Analyse abgeschlossen")
