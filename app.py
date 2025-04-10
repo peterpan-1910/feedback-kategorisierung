@@ -70,35 +70,34 @@ if st.sidebar.checkbox("📂 Regeln anzeigen"):
         with open(rules_file, "r") as f:
             all_rules = json.load(f)
         for cat, terms in all_rules.items():
-            st.sidebar.markdown(f"**{cat}**")
-            for term in sorted(set(terms)):
-                col1, col2 = st.sidebar.columns([5, 1])
-                edit_term = col1.text_input(label="", value=term, key=f"edit_{cat}_{term}")
-                if edit_term != term and edit_term.strip() != "":
-                    # Rücksetzen ermöglichen
-                    if 'original_rules' not in st.session_state:
-                        st.session_state.original_rules = {}
-                    st.session_state.original_rules.setdefault(cat, {})[term] = edit_term
-                    all_rules[cat].remove(term)
-                    all_rules[cat].append(edit_term.lower())
-                    with open(rules_file, "w") as f:
-                        json.dump(all_rules, f)
-                    st.experimental_rerun()
-                if term in st.session_state.get('original_rules', {}).get(cat, {}):
-                    if col1.button("↩️ Rückgängig", key=f"reset_{cat}_{term}"):
-                        original = term
-                        updated = st.session_state.original_rules[cat][term]
-                        all_rules[cat].remove(updated)
-                        all_rules[cat].append(original)
-                        del st.session_state.original_rules[cat][term]
+            with st.sidebar.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
+                for term in sorted(set(terms)):
+                    col1, col2 = st.columns([5, 1])
+                    edit_term = col1.text_input(label="", value=term, key=f"edit_{cat}_{term}")
+                    if edit_term != term and edit_term.strip() != "":
+                        if 'original_rules' not in st.session_state:
+                            st.session_state.original_rules = {}
+                        st.session_state.original_rules.setdefault(cat, {})[term] = edit_term
+                        all_rules[cat].remove(term)
+                        all_rules[cat].append(edit_term.lower())
                         with open(rules_file, "w") as f:
                             json.dump(all_rules, f)
                         st.experimental_rerun()
-                if col2.button("❌", key=f"del_{cat}_{term}"):
-                    all_rules[cat].remove(term)
-                    with open(rules_file, "w") as f:
-                        json.dump(all_rules, f)
-                    st.experimental_rerun()
+                    if term in st.session_state.get('original_rules', {}).get(cat, {}):
+                        if col1.button("↩️ Rückgängig", key=f"reset_{cat}_{term}"):
+                            original = term
+                            updated = st.session_state.original_rules[cat][term]
+                            all_rules[cat].remove(updated)
+                            all_rules[cat].append(original)
+                            del st.session_state.original_rules[cat][term]
+                            with open(rules_file, "w") as f:
+                                json.dump(all_rules, f)
+                            st.experimental_rerun()
+                    if col2.button("❌", key=f"del_{cat}_{term}"):
+                        all_rules[cat].remove(term)
+                        with open(rules_file, "w") as f:
+                            json.dump(all_rules, f)
+                        st.experimental_rerun()
     except Exception as e:
         st.sidebar.warning(f"Regeln konnten nicht geladen werden: {e}")
 st.sidebar.header("Kategorien")
@@ -193,15 +192,14 @@ if uploaded_file:
     else:
         with st.spinner("Analysiere Feedback..."):
             import json
-            rules_file = "custom_rules.json"
-            try:
-                with open(rules_file, "r") as f:
-                    saved_rules = json.load(f)
-            except:
-                saved_rules = {}
-            rules = {**saved_rules, **st.session_state.get("custom_rules", {})}
+rules_file = "custom_rules.json"
+try:
+    with open(rules_file, "r") as f:
+        saved_rules = json.load(f)
+except:
+    saved_rules = {}
+rules = {**saved_rules, **st.session_state.get("custom_rules", {})}
             df['Kategorie'] = df['Feedback'].astype(str).apply(lambda x: kategorisieren_feedback(x, rules))
-
 
         st.success("Analyse abgeschlossen")
         st.dataframe(df[['Feedback', 'Kategorie']])
