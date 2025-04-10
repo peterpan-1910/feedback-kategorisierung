@@ -83,12 +83,13 @@ else:
     }
 
 # Sidebar Übersicht
-st.sidebar.header("📚 Aktive Kategorien")
+right_column = st.sidebar.container()
+right_column.header("📚 Aktive Kategorien")
 if all_rules:
     for k in sorted(all_rules.keys()):
-        st.sidebar.markdown(f"✅ {k} ({len(all_rules[k])} Begriffe)")
+        right_column.markdown(f"✅ {k} ({len(all_rules[k])} Begriffe)")
 else:
-    st.sidebar.info("Noch keine Kategorien vorhanden.")
+    right_column.info("Noch keine Kategorien vorhanden.")
 
 
 st.subheader("🗂️ Kategorien und zugehörige Schlüsselwörter")
