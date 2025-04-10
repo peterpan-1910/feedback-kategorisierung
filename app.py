@@ -55,35 +55,7 @@ st.title("📊 Regelbasierte Feedback-Kategorisierung")
 menu = st.sidebar.radio("Navigiere zu", ["Analyse", "Kategorien verwalten", "Regeln lernen"])
 
 if menu == "Kategorien verwalten":
-    st.subheader("🗂️ Kategorien und zugehörige Schlüsselwörter")
-    for cat, terms in sorted(all_rules.items()):
-        with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
-            updated_terms = []
-            for term in sorted(set(terms)):
-                col1, col2, col3 = st.columns([4, 1, 1])
-                new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
-                if new_term != term:
-                    updated_terms.append(new_term.lower())
-                else:
-                    updated_terms.append(term)
-                if col2.button("↩️", key=f"reset_{cat}_{term}"):
-                    updated_terms.append(term)
-                if col3.button("❌", key=f"delete_{cat}_{term}"):
-                    terms.remove(term)
-            all_rules[cat] = list(set(updated_terms))
-            with open(rules_file, "w") as f:
-                json.dump(all_rules, f, indent=2)
-
-    st.markdown("---")
-    st.subheader("➕ Neue Regel hinzufügen")
-    new_keyword = st.text_input("🔤 Schlüsselwort")
-    selected_category = st.selectbox("📌 Zielkategorie", sorted(all_rules.keys())) if all_rules else st.text_input("📌 Neue Kategorie")
-    if st.button("✅ Regel speichern") and new_keyword:
-        all_rules.setdefault(selected_category, []).append(new_keyword.lower())
-        with open(rules_file, "w") as f:
-            json.dump(all_rules, f, indent=2)
-        st.success(f"Regel gespeichert für '{selected_category}': {new_keyword}")
-        st.experimental_rerun()
+    
     st.stop()
 
 # ------------------ Kategorien & Regelverwaltung ------------------
@@ -215,7 +187,8 @@ if menu == "Regeln lernen":
                 all_rules[selected].append(word)
                 with open("rule_log.csv", "a", encoding="utf-8") as log:
                     import datetime
-                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}")
+                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}
+")
                 with open(rules_file, "w") as f:
                     json.dump(all_rules, f, indent=2)
                 st.success(f"'{word}' wurde der Kategorie '{selected}' hinzugefügt")
