@@ -93,7 +93,8 @@ st.markdown("## 🧠 Kategorien-Übersicht")
 with st.expander("📚 Aktive Kategorien & Anzahl der Keywords", expanded=True):
     if all_rules:
         for k in sorted(all_rules.keys()):
-            st.markdown(f"- **{k}**: {len(all_rules[k])} Begriffe")
+            st.markdown(f"### 📁 {k} ({len(all_rules[k])} Begriffe)")
+            st.markdown(", ".join(sorted(all_rules[k])))
     else:
         st.info("Noch keine Kategorien vorhanden.")
 
@@ -104,8 +105,10 @@ default_rules = all_rules.copy() if 'all_rules' in globals() else {}
 if os.path.exists(rules_file):
     with open(rules_file, "r") as f:
         loaded_rules = json.load(f)
+    # Ersetze Einträge mit denen aus dem Code (nicht nur ergänzen)
     for key, value in default_rules.items():
-        loaded_rules.setdefault(key, value)
+        if key not in loaded_rules or len(loaded_rules[key]) < len(value):
+            loaded_rules[key] = value
     all_rules = loaded_rules
 else:
     all_rules = default_rules
@@ -187,7 +190,8 @@ if menu == "Regeln lernen":
                 all_rules[selected].append(word)
                 with open("rule_log.csv", "a", encoding="utf-8") as log:
                     import datetime
-                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}")
+                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}
+")
                 with open(rules_file, "w") as f:
                     json.dump(all_rules, f, indent=2)
                 st.success(f"'{word}' wurde der Kategorie '{selected}' hinzugefügt")
