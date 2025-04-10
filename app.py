@@ -37,14 +37,7 @@ def show_login_ui():
         if check_login(username, password):
             st.session_state.logged_in = True
         else:
-                                        updated_terms.append(term)
-                                                                                                                if col2.button("↩️", key=f"reset_{cat}_{term}"):
-                                        updated_terms.append(term)
-                                                                                                                if col3.button("❌", key=f"delete_{cat}_{term}"):
-                                        continue  # gelöscht
-                                                                                            all_rules[cat] = list(set(updated_terms))
-                                                                                            with open(rules_file, "w") as f:
-                                                                                                                json.dump(all_rules, f, indent=2)
+            st.error("❌ Falscher Benutzername oder Passwort")
 
                 st.markdown("---")
         st.subheader("➕ Neue Regel hinzufügen")
