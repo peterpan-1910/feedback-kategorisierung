@@ -38,37 +38,43 @@ def show_login_ui():
             st.session_state.logged_in = True
         else:
             st.error("❌ Falscher Benutzername oder Passwort")
-        st.subheader("➕ Neue Regel hinzufügen")
-    new_keyword = st.text_input("🔤 Schlüsselwort")
-    selected_category = st.selectbox("📌 Zielkategorie", sorted(all_rules.keys())) if all_rules else st.text_input("📌 Neue Kategorie")
-    if st.button("✅ Regel speichern") and new_keyword:
-        all_rules.setdefault(selected_category, []).append(new_keyword.lower())
-        with open(rules_file, "w") as f:
-            json.dump(all_rules, f, indent=2)
-        st.success(f"Regel gespeichert für '{selected_category}': {new_keyword}")
-        st.experimental_rerun()
 
+if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    show_login_ui()
+    st.stop()
 
 # entfernt aus Analyse-Bereich
-
 menu = st.sidebar.radio("Navigiere zu", ["Regeln lernen", "Analyse"])
 
 rules_file = "custom_rules.json"
-default_rules = all_rules.copy() if 'all_rules' in globals() else {}
+default_rules = {
+    "Login": ["login", "anmeldung", "passwort", "einloggen"],
+    "TAN Probleme": ["tan", "code", "authentifizierung", "bestätigungscode"],
+    "App abstürze": ["absturz", "hängt", "app stürzt ab", "reagiert nicht"],
+    "Fehler / Bugs": ["fehler", "bug", "problem", "störung"],
+    "Feature Wünsche / Kritik": ["wunsch", "fehlt", "möchte", "bitte hinzufügen"],
+    "Sprachprobleme": ["englisch", "sprache", "nicht deutsch", "übersetzung"],
+    "Sicherheit": ["sicher", "daten", "schutz", "authentifizierung"],
+    "Tagesgeld": ["tagesgeld", "zins", "spar", "konto"],
+    "Werbung": ["werbung", "angebot", "popup", "anzeige"],
+    "UI / UX": ["design", "oberfläche", "layout", "benutzerfreundlich"],
+    "unübersichtlich": ["chaotisch", "finde nicht", "unübersichtlich", "kompliziert"],
+    "langsam": ["langsam", "dauert", "verzögert", "lädt lange"],
+    "Kundenservice": ["hotline", "telefon", "kontakt", "service"],
+    "Kontaktmöglichkeiten": ["rückruf", "mail", "email", "erreichbarkeit"],
+    "Vertrauenswürdigkeit": ["vertrauen", "unsicher", "zweifel", "seriös"],
+    "Gebühren": ["gebühren", "kosten", "preis", "zinsen"]
+}
+
 if os.path.exists(rules_file):
     with open(rules_file, "r") as f:
         loaded_rules = json.load(f)
-    # Ersetze Einträge mit denen aus dem Code (nicht nur ergänzen)
     for key, value in default_rules.items():
         if key not in loaded_rules or len(loaded_rules[key]) < len(value):
             loaded_rules[key] = value
     all_rules = loaded_rules
 else:
     all_rules = default_rules
-
-
-
-
 
 # ------------------ Regel-Lernen ------------------
 
@@ -105,7 +111,7 @@ if menu == "Regeln lernen":
             category_suggestion = term_category if term_category else (cat_matches[0] if cat_matches else "Ignorieren")
 
             if category_suggestion != "Ignorieren":
-                default_index = ["Ignorieren"] + sorted(all_rules.keys()).index(category_suggestion) + 1
+                default_index = sorted(all_rules.keys()).index(category_suggestion) + 1
             else:
                 default_index = 0
 
@@ -115,7 +121,7 @@ if menu == "Regeln lernen":
                 all_rules[selected].append(word)
                 with open("rule_log.csv", "a", encoding="utf-8") as log:
                     import datetime
-                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}")
+                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}\n")
                 with open(rules_file, "w") as f:
                     json.dump(all_rules, f, indent=2)
                 st.success(f"'{word}' wurde der Kategorie '{selected}' hinzugefügt")
