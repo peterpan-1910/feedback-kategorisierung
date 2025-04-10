@@ -88,14 +88,11 @@ else:
     }
 
 if menu == "Regeln lernen":
-    st.markdown("## 🧠 Kategorien-Übersicht")
-    with st.expander("📚 Aktive Kategorien & Anzahl der Keywords", expanded=False):
+    with st.expander("🧠 Kategorien & Schlüsselwörter anzeigen", expanded=False):
         if all_rules:
             for cat, terms in sorted(all_rules.items()):
-                st.markdown(f"### 📁 {cat} ({len(terms)} Begriffe)")
-                st.markdown(", ".join(sorted(terms)))
-        else:
-            st.info("Noch keine Kategorien vorhanden.")
+                with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
+                    st.markdown(", ".join(sorted(terms)))
 
     st.markdown("---")
     st.subheader("✏️ Schlüsselwörter verwalten")
