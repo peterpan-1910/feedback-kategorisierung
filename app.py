@@ -93,7 +93,7 @@ if menu == "Regeln lernen":
             for cat, terms in sorted(all_rules.items()):
                 with st.container():
                     st.markdown(f"<details><summary><strong>📁 {cat} ({len(terms)} Begriffe)</strong></summary><p>{', '.join(sorted(terms))}</p></details>", unsafe_allow_html=True)
-    st.subheader("✏️ Schlüsselwörter verwalten")
+    with st.expander("✏️ Schlüsselwörter verwalten", expanded=False):
     if all_rules:
         for cat, terms in sorted(all_rules.items()):
             st.markdown(f"#### {cat}")
@@ -113,7 +113,7 @@ if menu == "Regeln lernen":
             with open(rules_file, "w") as f:
                 json.dump(all_rules, f, indent=2)
 
-    st.markdown("---")
+        st.markdown("---")
     st.subheader("➕ Neue Regel hinzufügen")
     new_keyword = st.text_input("🔤 Schlüsselwort")
     selected_category = st.selectbox("📌 Zielkategorie", sorted(all_rules.keys())) if all_rules else st.text_input("📌 Neue Kategorie")
