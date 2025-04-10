@@ -102,13 +102,13 @@ if menu == "Regeln lernen":
                                                                 col1, col2, col3 = st.columns([4, 1, 1])
                                                                 new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
                                                                 if new_term != term:
-                    updated_terms.append(new_term.lower())
+                                updated_terms.append(new_term.lower())
                                                                 else:
-                            updated_terms.append(term)
+                                updated_terms.append(term)
                                                                 if col2.button("↩️", key=f"reset_{cat}_{term}"):
-                    updated_terms.append(term)
+                                updated_terms.append(term)
                                                                 if col3.button("❌", key=f"delete_{cat}_{term}"):
-                    continue  # gelöscht
+                                continue  # gelöscht
                                                     all_rules[cat] = list(set(updated_terms))
                                                     with open(rules_file, "w") as f:
                                                                 json.dump(all_rules, f, indent=2)
