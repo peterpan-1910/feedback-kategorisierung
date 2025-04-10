@@ -4,6 +4,15 @@ import hashlib
 import json
 import os
 
+# ------------------ Hilfsfunktionen ------------------
+@st.cache_data(show_spinner=False)
+def kategorisieren_feedback(text, rule_map):
+    text = text.lower()
+    for kategorie, schluessel in rule_map.items():
+        if any(s in text for s in schluessel):
+            return kategorie
+    return "Sonstiges"
+
 # ------------- Benutzerverwaltung (Login) ----------------
 USER_CREDENTIALS = {
     "admin2025": hashlib.sha256("admin2025".encode()).hexdigest()
@@ -173,14 +182,6 @@ if menu == "Regeln lernen":
 # ------------------ Datei-Upload und Kategorisierung ------------------
 
 uploaded_file = st.file_uploader("📤 Excel-Datei mit Feedback hochladen", type=["xlsx"])
-
-@st.cache_data(show_spinner=False)
-def kategorisieren_feedback(text, rule_map):
-    text = text.lower()
-    for kategorie, schluessel in rule_map.items():
-        if any(s in text for s in schluessel):
-            return kategorie
-    return "Sonstiges"
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
