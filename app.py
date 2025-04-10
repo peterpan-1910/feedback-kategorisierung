@@ -52,7 +52,7 @@ if not st.session_state.logged_in:
 # ------------------ Nach dem Login ------------------
 
 st.title("📊 Regelbasierte Feedback-Kategorisierung")
-menu = st.sidebar.radio("Navigiere zu", ["Analyse", "Kategorien verwalten", "Regeln lernen"])
+menu = st.sidebar.radio("Navigiere zu", ["Analyse", "Regeln lernen"])
 
 if menu == "Kategorien verwalten":
     
@@ -99,7 +99,7 @@ with st.expander("📚 Aktive Kategorien & Anzahl der Keywords", expanded=True):
         st.info("Noch keine Kategorien vorhanden.")
 
 
-st.subheader("🗂️ Kategorien und zugehörige Schlüsselwörter")
+# entfernt aus Analyse-Bereich
 rules_file = "custom_rules.json"
 default_rules = all_rules.copy() if 'all_rules' in globals() else {}
 if os.path.exists(rules_file):
@@ -115,7 +115,7 @@ else:
 
 for cat, terms in sorted(all_rules.items()):
     terms = list(set(terms))  # Duplikate sicher entfernen und vollständige Liste anzeigen
-    with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=True):
+    with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
         updated_terms = []
         for term in sorted(set(terms)):
             col1, col2, col3 = st.columns([4, 1, 1])
@@ -190,7 +190,7 @@ if menu == "Regeln lernen":
                 all_rules[selected].append(word)
                 with open("rule_log.csv", "a", encoding="utf-8") as log:
                     import datetime
-                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}")
+                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}")")
                 with open(rules_file, "w") as f:
                     json.dump(all_rules, f, indent=2)
                 st.success(f"'{word}' wurde der Kategorie '{selected}' hinzugefügt")
