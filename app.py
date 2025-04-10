@@ -88,15 +88,15 @@ else:
         "Gebühren": ["gebühr", "zinsen", "bearbeitungsgebühr", "kosten", "preis", "zu teuer", "gebühren nicht klar", "versteckte kosten", "nicht kostenlos", "zusatzkosten", "gebühren unklar", "bankgebühren", "gebührenerhöhung", "nicht transparent", "kosten zu hoch", "gebührenänderung", "kontoführungsgebühr", "auszahlungsgebühr", "transaktionsgebühr", "gebühr zu hoch", "zu hohe zinsen", "gebühreninfo fehlt", "unverhältnismäßige gebühr", "gebühr nicht nachvollziehbar", "entgelt", "gebührenbelastung", "gebühr nicht verständlich", "servicegebühr", "provision", "kostenaufstellung fehlt"]
     }
 
-# Sidebar Übersicht als rechte Spalte auf Hauptseite
-st.markdown("## 🧠 Kategorien-Übersicht")
-with st.expander("📚 Aktive Kategorien & Anzahl der Keywords", expanded=True):
-    if all_rules:
-        for k in sorted(all_rules.keys()):
-            st.markdown(f"### 📁 {k} ({len(all_rules[k])} Begriffe)")
-            st.markdown(", ".join(sorted(all_rules[k])))
-    else:
-        st.info("Noch keine Kategorien vorhanden.")
+if menu == "Regeln lernen":
+    st.markdown("## 🧠 Kategorien-Übersicht")
+    with st.expander("📚 Aktive Kategorien & Anzahl der Keywords", expanded=False):
+        if all_rules:
+            for k in sorted(all_rules.keys()):
+                st.markdown(f"### 📁 {k} ({len(all_rules[k])} Begriffe)")
+                st.markdown(", ".join(sorted(all_rules[k])))
+        else:
+            st.info("Noch keine Kategorien vorhanden.")
 
 
 # entfernt aus Analyse-Bereich
@@ -190,7 +190,7 @@ if menu == "Regeln lernen":
                 all_rules[selected].append(word)
                 with open("rule_log.csv", "a", encoding="utf-8") as log:
                     import datetime
-                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}")
+                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}")")
                 with open(rules_file, "w") as f:
                     json.dump(all_rules, f, indent=2)
                 st.success(f"'{word}' wurde der Kategorie '{selected}' hinzugefügt")
