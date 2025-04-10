@@ -46,7 +46,6 @@ if "logged_in" not in st.session_state:
 
 if not st.session_state.logged_in:
     show_login_ui()
-    st.experimental_rerun()
     st.stop()
 
 # ------------------ Nach dem Login ------------------
