@@ -39,42 +39,104 @@ def show_login_ui():
         else:
             st.error("❌ Falscher Benutzername oder Passwort")
 
-if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    st.markdown("""<div class="footer-text">© 2025 Feedback Analyzer<br>Version 1.0.0</div>""", unsafe_allow_html=True)
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
     show_login_ui()
     st.stop()
 
-# entfernt aus Analyse-Bereich
-menu = st.sidebar.radio("Navigiere zu", ["Regeln lernen", "Analyse"])
+# ------------------ Nach dem Login ------------------
+
+st.title("📊 Regelbasierte Feedback-Kategorisierung")
+menu = st.sidebar.radio("Navigiere zu", ["Analyse", "Regeln lernen"])
+
+if menu == "Kategorien verwalten":
+    
+    st.stop()
+
+# ------------------ Kategorien & Regelverwaltung ------------------
 
 rules_file = "custom_rules.json"
-default_rules = {
-    "Login": ["login", "anmeldung", "passwort", "einloggen"],
-    "TAN Probleme": ["tan", "code", "authentifizierung", "bestätigungscode"],
-    "App abstürze": ["absturz", "hängt", "app stürzt ab", "reagiert nicht"],
-    "Fehler / Bugs": ["fehler", "bug", "problem", "störung"],
-    "Feature Wünsche / Kritik": ["wunsch", "fehlt", "möchte", "bitte hinzufügen"],
-    "Sprachprobleme": ["englisch", "sprache", "nicht deutsch", "übersetzung"],
-    "Sicherheit": ["sicher", "daten", "schutz", "authentifizierung"],
-    "Tagesgeld": ["tagesgeld", "zins", "spar", "konto"],
-    "Werbung": ["werbung", "angebot", "popup", "anzeige"],
-    "UI / UX": ["design", "oberfläche", "layout", "benutzerfreundlich"],
-    "unübersichtlich": ["chaotisch", "finde nicht", "unübersichtlich", "kompliziert"],
-    "langsam": ["langsam", "dauert", "verzögert", "lädt lange"],
-    "Kundenservice": ["hotline", "telefon", "kontakt", "service"],
-    "Kontaktmöglichkeiten": ["rückruf", "mail", "email", "erreichbarkeit"],
-    "Vertrauenswürdigkeit": ["vertrauen", "unsicher", "zweifel", "seriös"],
-    "Gebühren": ["gebühren", "kosten", "preis", "zinsen"]
-}
+if os.path.exists(rules_file):
+    with open(rules_file, "r") as f:
+        all_rules = json.load(f)
+else:
+    all_rules = {
+        # Hinweis: Jede Kategorie hat jetzt mindestens 30 semantisch passende Begriffe
+        "Login": ["einloggen", "login", "passwort", "anmeldung", "einloggen fehlgeschlagen", "nicht einloggen", "login funktioniert nicht", "authentifizierung fehler", "probleme beim anmelden", "nicht angemeldet", "zugriff", "fehlermeldung", "konto", "abmeldung", "kennwort", "verbindungsfehler", "sitzung", "anmeldedaten", "nutzerdaten", "loginversuch", "keine anmeldung möglich", "probleme mit login", "passwort falsch", "kennwort zurücksetzen", "neues passwort", "loginseite", "loginfenster", "verbindung fehlgeschlagen", "nicht authentifiziert", "anmeldung abgelehnt", "nutzerdaten ungültig", "app meldet fehler", "einloggen unmöglich", "nicht mehr angemeldet", "verbindung wird getrennt", "sitzung beendet", "session läuft ab", "fehlversuch login", "loginblockade"],
+        "TAN Probleme": ["tan", "code", "authentifizierung", "bestätigungscode", "code kommt nicht", "tan nicht erhalten", "sms tan", "tan eingabe", "problem mit tan", "keine tan bekommen", "tan ungültig", "tan feld fehlt", "neue tan", "tan abgelaufen", "tan funktioniert nicht", "tan wird nicht akzeptiert", "falscher tan code", "keine tan sms", "tan verzögert", "push tan", "photo tan", "mTAN", "secure tan", "tan app", "tan mail", "email tan", "keine tan gesendet", "2-faktor tan", "tan bleibt leer", "probleme mit authentifizierung"],
+        "App abstürze": ["absturz", "hängt", "app stürzt ab", "reagiert nicht", "crash", "app friert ein", "schließt sich", "hängt sich auf", "abgestürzt", "beendet sich", "app hängt sich auf", "app schließt unerwartet", "fehler beim starten", "app startet nicht", "startet nicht mehr", "app funktioniert nicht", "nichts passiert", "plötzlich beendet", "bleibt stehen", "app reagiert nicht", "schwarzer bildschirm", "app lädt nicht", "absturz beim öffnen", "abbruch", "fehler beim öffnen", "startproblem", "app bleibt hängen", "app hängt fest", "schließt nach start", "app stürzt ständig ab"],
+        "Fehler / Bugs": ["fehler", "bug", "problem", "funktioniert nicht", "technischer fehler", "defekt", "störung", "anwendungsfehler", "fehlerhaft", "problematisch", "systemfehler", "fehlermeldung", "appfehler", "softwareproblem", "ausnahmefehler", "programmfehler", "fehleranzeige", "abbruchfehler", "nicht verfügbar", "error", "fehlfunktion", "nicht geladen", "seitenfehler", "prozessfehler", "absturzmeldung", "stopp", "hänger", "service nicht erreichbar", "ladefehler", "modulproblem"],
+        "Rückzahlungsoptionen": ["rückzahlung", "raten", "tilgung", "zurückzahlen", "zahlung aufteilen", "zahlungspause", "rate ändern", "tilgungsplan", "rückzahlung ändern", "ratenzahlung", "rückzahlungsplan", "abzahlungsoption", "zahlung stunden", "zahlungsaufschub", "zahlung reduzieren", "monatsrate ändern", "zahlung anpassen", "flexible raten", "anpassung rate", "kreditrückzahlung", "anzahlung", "zahlung verschieben", "abzahlungsdauer", "rückzahlungsart", "zahlung in teilen", "verzögerung", "teilrückzahlung", "ablösung kredit", "rate pausieren", "rate aussetzen"],
+        "Zahlungsprobleme": ["zahlung", "überweisung", "geld senden", "keine buchung", "zahlung funktioniert nicht", "zahlung fehlgeschlagen", "nicht überwiesen", "nicht angekommen", "probleme mit zahlung", "überweisung hängt", "zahlung nicht möglich", "zahlung abgelehnt", "konnte nicht zahlen", "buchung nicht durchgeführt", "fehlende zahlung", "problem mit lastschrift", "banküberweisung gescheitert", "nicht gebucht", "zahlungsvorgang fehlerhaft", "betrag nicht abgebucht", "zahlung wurde nicht verarbeitet", "lastschrift fehlgeschlagen", "überweisung nicht angekommen", "zahlung nicht bestätigt", "abbuchung fehlt", "keine bestätigung", "geld nicht übertragen", "buchung offen", "geld nicht gutgeschrieben", "fehlermeldung bei zahlung"],
+        "Kompliziert / Unklar": ["kompliziert", "nicht verständlich", "nicht intuitiv", "schwer zu verstehen", "unklar", "nicht eindeutig", "umständlich", "nicht nutzerfreundlich", "unverständlich", "verwirrend", "komplizierter vorgang", "nicht nachvollziehbar", "nicht klar erklärt", "unlogisch", "verwirrende navigation", "menü unverständlich", "unklare anleitung", "komplizierte beschreibung", "sperrig", "nicht selbsterklärend", "nicht selbsterklärlich", "verwirrende benennung", "missverständlich", "komplexe struktur", "kein roter faden", "nicht eindeutig beschrieben", "nicht eindeutig erklärt", "nicht selbsterklärende schritte", "nicht klar gegliedert", "undurchsichtig"],
+        "Feature-Wünsche / Kritik": ["funktion fehlt", "wäre gut", "feature", "nicht vorgesehen", "funktion sollte", "funktion benötigt", "ich wünsche mir", "bitte ergänzen", "könnte man hinzufügen", "nicht verfügbar", "funktion nicht vorhanden", "funktion deaktiviert", "fehlt in der app", "keine möglichkeit", "nicht vorgesehen", "nicht enthalten", "noch nicht verfügbar", "sollte implementiert werden", "gewünschtes feature", "funktion vermisst", "kein button", "nicht auswählbar", "keine option", "option fehlt", "nicht konfigurierbar", "könnte verbessert werden", "wünschenswert", "funktion erweitern", "benutzerwunsch", "nicht freigeschaltet"],
+        "Sprachprobleme": ["englisch", "nicht auf deutsch", "sprache falsch", "nur englisch", "kein deutsch", "nicht lokalisiert", "übersetzung fehlt", "englische sprache", "sprache ändern", "menü englisch", "texte nicht übersetzt", "nur englische version", "übersetzungsfehler", "falsche sprache", "texte nicht verständlich", "fehlende lokalisierung", "keine deutsche sprache", "falsche sprachversion", "spracheinstellungen fehlen", "menü auf englisch", "fehlende übersetzung", "sprachlich unklar", "kein sprachwechsel", "interface englisch", "nicht auf deutsch verfügbar", "englischer hilfetext", "sprachumschaltung fehlt", "keine lokalisierung", "fehlende sprachwahl", "hilfe nur englisch"],
+        "Sicherheit": ["sicherheit", "schutz", "sicherheitsproblem", "datenleck", "nicht sicher", "unsicher", "sicherheitsbedenken", "keine 2-faktor", "risiko", "zugriffsproblem", "sicherheitslücke", "keine verschlüsselung", "unsichere verbindung", "unsicherer zugang", "schutz fehlt", "keine passwortabfrage", "fehlende sicherheit", "daten ungeschützt", "authentifizierung unklar", "zugriff ohne sicherheit", "fehlender schutzmechanismus", "kein logout", "automatischer logout fehlt", "keine warnmeldung", "sicherheitsmeldung fehlt", "datenweitergabe", "keine session begrenzung", "session nicht gesichert", "zugangsdaten unverschlüsselt", "zugriffsrechte unklar"],
+        "Tagesgeld": ["tagesgeld", "zins", "geldanlage", "sparzins", "zinskonto", "zinsen fehlen", "tagesgeldkonto", "keine verzinsung", "tagesgeldrate", "zinsbindung", "verzinsung", "zinsänderung", "tagesgeldkonto nicht sichtbar", "tagesgeld nicht auswählbar", "zins niedrig", "zinsangebot", "anlagezins", "keine zinsinfo", "zins falsch angezeigt", "tagesgeld fehler", "nicht verzinst", "zins fehlt", "tagesgeldrate nicht geändert", "tagesgeldrate nicht angepasst", "zinsbuchung fehlt", "zinsrate falsch", "zins wird nicht berechnet", "tagesgeldkonto fehlt", "keine zinsanpassung", "tagesgeldoption fehlt"],
+        "Werbung": ["werbung", "angebot", "promo", "aktionscode", "zu viel werbung", "nervige werbung", "nicht relevant", "spam", "werbeeinblendung", "promotion", "werbeanzeige", "werbebanner", "werbebotschaft", "unpassende werbung", "irrelevante werbung", "werbeaktion", "werbung eingeblendet", "push werbung", "email werbung", "werbung auf startseite", "nicht deaktivierbar", "werbung bei login", "keine option zum abschalten", "störende werbung", "zu viele angebote", "angebote nerven", "werbung in app", "werbung zu präsent", "popup werbung", "unnötige angebote"],
+        "UI/UX": ["veraltet", "nicht modern", "design alt", "nicht intuitiv", "menüführung schlecht", "layout veraltet", "keine struktur", "nicht übersichtlich", "nicht schön", "altbacken", "altmodisch", "nicht benutzerfreundlich", "unübersichtliches layout", "nicht ansprechend", "veraltetes interface", "kein modernes design", "wirkt alt", "design nicht aktuell", "unmoderne oberfläche", "technisch alt", "nicht responsive", "bedienung veraltet", "style altbacken", "nutzung unkomfortabel", "umständliches layout", "nicht ansehnlich", "elemente zu klein", "zu viel text", "keine icons", "unpraktische darstellung"],
+        "unübersichtlich": ["unübersichtlich", "nicht klar", "durcheinander", "nicht strukturiert", "keine ordnung", "keine übersicht", "zu komplex", "schlecht aufgebaut", "nicht nachvollziehbar", "layout chaotisch", "verwirrend", "keine menüstruktur", "kein überblick", "unklare gliederung", "unübersichtliches menü", "nicht übersichtlich", "unstrukturierte darstellung", "unübersichtliche seite", "navigation schwierig", "kompliziertes menü", "kein roter faden", "menüführung unklar", "fehlende kategorien", "kein filter", "ohne sortierung", "unleserlich", "überladen", "optisch unklar", "nicht gut erkennbar", "kategorie fehlt"],
+        "langsam": ["langsam", "lädt lange", "dauert ewig", "träge", "reaktionszeit", "verzögert", "ewiges laden", "warten", "verbindung langsam", "nicht flüssig", "app ist träge", "verzögertes reagieren", "ladeprobleme", "app ist langsam", "reagiert langsam", "lange ladezeit", "performanceschwäche", "zu langsam", "langsamer aufbau", "app lädt nicht sofort", "träge benutzung", "startet langsam", "verarbeitung dauert", "menü öffnet langsam", "daten laden ewig", "prozess dauert", "feedback dauert", "anmeldung langsam", "reaktion zu spät", "verarbeitung verzögert"],
+        "Kundenservice": ["support", "hotline", "rückruf", "keine antwort", "niemand erreichbar", "service schlecht", "lange wartezeit", "kundendienst", "keine hilfe", "service reagiert nicht", "keine unterstützung", "reagiert nicht", "kontakt nicht möglich", "wartezeit", "keine rückmeldung", "telefonisch nicht erreichbar", "keine lösung", "antwort dauert", "kundenberatung fehlt", "keine antwort erhalten", "hotline nicht erreichbar", "keine serviceleistung", "kundensupport schlecht", "kundenbetreuung mangelhaft", "kundenservice reagiert nicht", "service schwer erreichbar", "service antwortet nicht", "nicht geholfen", "unfreundlicher support", "hilft nicht weiter"],
+        "Kontaktmöglichkeiten": ["ansprechpartner", "kontakt", "rückruf", "nicht erreichbar", "kein kontakt", "keine kontaktdaten", "hilfe fehlt", "kontaktformular", "keine rückmeldung", "support kontakt", "kein formular", "supportformular fehlt", "kundendienst kontaktieren", "telefon fehlt", "email fehlt", "nur hotline", "kontakt schwierig", "kontaktierung unklar", "kontaktoption fehlt", "keine kontaktmöglichkeit", "nicht ansprechbar", "support schwer erreichbar", "kein livechat", "keine supportmail", "anfrage nicht möglich", "kein rückruf erhalten", "kontaktseite leer", "keine kontaktfunktion", "kontaktmöglichkeit nicht ersichtlich", "anfrageformular fehlt"],
+        "Vertrauenswürdigkeit": ["vertrauen", "abzocke", "nicht seriös", "zweifelhaft", "skepsis", "nicht glaubwürdig", "unsicher", "nicht transparent", "betrugsverdacht", "nicht vertrauenswürdig", "datensicherheit", "nicht nachvollziehbar", "intransparente kosten", "unseriös", "abzocker", "misstrauen", "unsicheres gefühl", "nicht überprüfbar", "unvollständig", "zweifelhaftes angebot", "kein impressum", "keine transparenz", "zweifelhaftes verhalten", "verdacht auf betrug", "unsichere kommunikation", "fehlende datensicherheit", "keine aufklärung", "unzuverlässig", "fragwürdig", "irreführend"],
+        "Gebühren": ["gebühr", "zinsen", "bearbeitungsgebühr", "kosten", "preis", "zu teuer", "gebühren nicht klar", "versteckte kosten", "nicht kostenlos", "zusatzkosten", "gebühren unklar", "bankgebühren", "gebührenerhöhung", "nicht transparent", "kosten zu hoch", "gebührenänderung", "kontoführungsgebühr", "auszahlungsgebühr", "transaktionsgebühr", "gebühr zu hoch", "zu hohe zinsen", "gebühreninfo fehlt", "unverhältnismäßige gebühr", "gebühr nicht nachvollziehbar", "entgelt", "gebührenbelastung", "gebühr nicht verständlich", "servicegebühr", "provision", "kostenaufstellung fehlt"]
+    }
 
+if menu == "Regeln lernen":
+    with st.expander("🧠 Kategorien & Schlüsselwörter anzeigen", expanded=False):
+        if all_rules:
+            for cat, terms in sorted(all_rules.items()):
+                with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
+                                                                        updated_terms = []
+                                                                        for term in sorted(set(terms)):
+                                                                                        col1, col2, col3 = st.columns([4, 1, 1])
+                                                                                        new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
+                                                                                        if new_term != term:
+                                                                updated_terms.append(new_term.lower())
+                                                                                        else:
+                                                        updated_terms.append(term)
+                                                                                        if col2.button("↩️", key=f"reset_{cat}_{term}"):
+                                    updated_terms.append(term)
+                                                                                        if col3.button("❌", key=f"delete_{cat}_{term}"):
+                                                                continue  # gelöscht
+                                                                        all_rules[cat] = list(set(updated_terms))
+                                                                        with open(rules_file, "w") as f:
+                                                                                        json.dump(all_rules, f, indent=2)
+
+                st.markdown("---")
+        st.subheader("➕ Neue Regel hinzufügen")
+    new_keyword = st.text_input("🔤 Schlüsselwort")
+    selected_category = st.selectbox("📌 Zielkategorie", sorted(all_rules.keys())) if all_rules else st.text_input("📌 Neue Kategorie")
+    if st.button("✅ Regel speichern") and new_keyword:
+        all_rules.setdefault(selected_category, []).append(new_keyword.lower())
+        with open(rules_file, "w") as f:
+            json.dump(all_rules, f, indent=2)
+        st.success(f"Regel gespeichert für '{selected_category}': {new_keyword}")
+        st.experimental_rerun()
+
+
+# entfernt aus Analyse-Bereich
+rules_file = "custom_rules.json"
+default_rules = all_rules.copy() if 'all_rules' in globals() else {}
 if os.path.exists(rules_file):
     with open(rules_file, "r") as f:
         loaded_rules = json.load(f)
+    # Ersetze Einträge mit denen aus dem Code (nicht nur ergänzen)
     for key, value in default_rules.items():
         if key not in loaded_rules or len(loaded_rules[key]) < len(value):
             loaded_rules[key] = value
     all_rules = loaded_rules
 else:
     all_rules = default_rules
+
+
+
+
 
 # ------------------ Regel-Lernen ------------------
 
@@ -111,7 +173,7 @@ if menu == "Regeln lernen":
             category_suggestion = term_category if term_category else (cat_matches[0] if cat_matches else "Ignorieren")
 
             if category_suggestion != "Ignorieren":
-                default_index = sorted(all_rules.keys()).index(category_suggestion) + 1
+                default_index = ["Ignorieren"] + sorted(all_rules.keys()).index(category_suggestion) + 1
             else:
                 default_index = 0
 
@@ -121,7 +183,7 @@ if menu == "Regeln lernen":
                 all_rules[selected].append(word)
                 with open("rule_log.csv", "a", encoding="utf-8") as log:
                     import datetime
-                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}\n")
+                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}")
                 with open(rules_file, "w") as f:
                     json.dump(all_rules, f, indent=2)
                 st.success(f"'{word}' wurde der Kategorie '{selected}' hinzugefügt")
