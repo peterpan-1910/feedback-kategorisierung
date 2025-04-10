@@ -93,24 +93,31 @@ if menu == "Regeln lernen":
     with st.expander("📚 Aktive Kategorien & Anzahl der Keywords", expanded=False):
         if all_rules:
             for cat, terms in sorted(all_rules.items()):
-                with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
-                    updated_terms = []
-                    for term in sorted(set(terms)):
-                        col1, col2, col3 = st.columns([4, 1, 1])
-                        new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
-                        if new_term != term:
-                            updated_terms.append(new_term.lower())
-                        else:
-                            updated_terms.append(term)
-                        if col2.button("↩️", key=f"reset_{cat}_{term}"):
-                            updated_terms.append(term)
-                        if col3.button("❌", key=f"delete_{cat}_{term}"):
-                            terms.remove(term)
-                    all_rules[cat] = list(set(updated_terms))
-                    with open(rules_file, "w") as f:
-                        json.dump(all_rules, f, indent=2)
+                st.markdown(f"### 📁 {cat} ({len(terms)} Begriffe)")
+                st.markdown(", ".join(sorted(terms)))
         else:
             st.info("Noch keine Kategorien vorhanden.")
+
+    st.markdown("---")
+    st.subheader("✏️ Schlüsselwörter verwalten")
+    if all_rules:
+        for cat, terms in sorted(all_rules.items()):
+            st.markdown(f"#### {cat}")
+            updated_terms = []
+            for term in sorted(set(terms)):
+                col1, col2, col3 = st.columns([4, 1, 1])
+                new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
+                if new_term != term:
+                    updated_terms.append(new_term.lower())
+                else:
+                    updated_terms.append(term)
+                if col2.button("↩️", key=f"reset_{cat}_{term}"):
+                    updated_terms.append(term)
+                if col3.button("❌", key=f"delete_{cat}_{term}"):
+                    continue  # gelöscht
+            all_rules[cat] = list(set(updated_terms))
+            with open(rules_file, "w") as f:
+                json.dump(all_rules, f, indent=2)
 
     st.markdown("---")
     st.subheader("➕ Neue Regel hinzufügen")
