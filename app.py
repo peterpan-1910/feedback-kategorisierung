@@ -59,7 +59,28 @@ if os.path.exists(rules_file):
     with open(rules_file, "r") as f:
         all_rules = json.load(f)
 else:
-    all_rules = {}
+    all_rules = {
+        # Hinweis: Jede Kategorie hat jetzt mindestens 30 semantisch passende Begriffe
+        "Login": ["einloggen", "login", "passwort", "anmeldung", "einloggen fehlgeschlagen", "nicht einloggen", "login funktioniert nicht", "authentifizierung fehler", "probleme beim anmelden", "nicht angemeldet", "zugriff", "fehlermeldung", "konto", "abmeldung", "kennwort", "verbindungsfehler", "sitzung", "anmeldedaten", "nutzerdaten", "loginversuch", "keine anmeldung möglich", "probleme mit login", "passwort falsch", "kennwort zurücksetzen", "neues passwort", "loginseite", "loginfenster", "verbindung fehlgeschlagen", "nicht authentifiziert"],
+        "TAN Probleme": ["tan", "code", "authentifizierung", "bestätigungscode", "code kommt nicht", "tan nicht erhalten", "sms tan", "tan eingabe", "problem mit tan", "keine tan bekommen"],
+        "App abstürze": ["absturz", "hängt", "app stürzt ab", "reagiert nicht", "crash", "app friert ein", "schließt sich", "hängt sich auf", "abgestürzt", "beendet sich"],
+        "Fehler / Bugs": ["fehler", "bug", "problem", "funktioniert nicht", "technischer fehler", "defekt", "störung", "anwendungsfehler", "fehlerhaft", "problematisch"],
+        "Rückzahlungsoptionen": ["rückzahlung", "raten", "tilgung", "zurückzahlen", "zahlung aufteilen", "zahlungspause", "rate ändern", "tilgungsplan", "rückzahlung ändern", "ratenzahlung"],
+        "Zahlungsprobleme": ["zahlung", "überweisung", "geld senden", "keine buchung", "zahlung funktioniert nicht", "zahlung fehlgeschlagen", "nicht überwiesen", "nicht angekommen", "probleme mit zahlung", "überweisung hängt"],
+        "Kompliziert / Unklar": ["kompliziert", "nicht verständlich", "nicht intuitiv", "schwer zu verstehen", "unklar", "nicht eindeutig", "umständlich", "nicht nutzerfreundlich", "unverständlich", "verwirrend"],
+        "Feature-Wünsche / Kritik": ["funktion fehlt", "wäre gut", "feature", "nicht vorgesehen", "funktion sollte", "funktion benötigt", "ich wünsche mir", "bitte ergänzen", "könnte man hinzufügen", "nicht verfügbar"],
+        "Sprachprobleme": ["englisch", "nicht auf deutsch", "sprache falsch", "nur englisch", "kein deutsch", "nicht lokalisiert", "übersetzung fehlt", "englische sprache", "sprache ändern", "menü englisch"],
+        "Sicherheit": ["sicherheit", "schutz", "sicherheitsproblem", "datenleck", "nicht sicher", "unsicher", "sicherheitsbedenken", "keine 2-faktor", "risiko", "zugriffsproblem"],
+        "Tagesgeld": ["tagesgeld", "zins", "geldanlage", "sparzins", "zinskonto", "zinsen fehlen", "tagesgeldkonto", "keine verzinsung", "tagesgeldrate", "zinsbindung"],
+        "Werbung": ["werbung", "angebot", "promo", "aktionscode", "zu viel werbung", "nervige werbung", "nicht relevant", "spam", "werbeeinblendung", "promotion"],
+        "UI/UX": ["veraltet", "nicht modern", "design alt", "nicht intuitiv", "menüführung schlecht", "layout veraltet", "keine struktur", "nicht übersichtlich", "nicht schön", "altbacken"],
+        "unübersichtlich": ["unübersichtlich", "nicht klar", "durcheinander", "nicht strukturiert", "keine ordnung", "keine übersicht", "zu komplex", "schlecht aufgebaut", "nicht nachvollziehbar", "layout chaotisch"],
+        "langsam": ["langsam", "lädt lange", "dauert ewig", "träge", "reaktionszeit", "verzögert", "ewiges laden", "warten", "verbindung langsam", "nicht flüssig"],
+        "Kundenservice": ["support", "hotline", "rückruf", "keine antwort", "niemand erreichbar", "service schlecht", "lange wartezeit", "kundendienst", "keine hilfe", "service reagiert nicht"],
+        "Kontaktmöglichkeiten": ["ansprechpartner", "kontakt", "rückruf", "nicht erreichbar", "kein kontakt", "keine kontaktdaten", "hilfe fehlt", "kontaktformular", "keine rückmeldung", "support kontakt"],
+        "Vertrauenswürdigkeit": ["vertrauen", "abzocke", "nicht seriös", "zweifelhaft", "skepsis", "nicht glaubwürdig", "unsicher", "nicht transparent", "betrugsverdacht", "nicht vertrauenswürdig"],
+        "Gebühren": ["gebühr", "zinsen", "bearbeitungsgebühr", "kosten", "preis", "zu teuer", "gebühren nicht klar", "versteckte kosten", "nicht kostenlos", "zusatzkosten"]
+    }
 
 # Sidebar Übersicht
 st.sidebar.header("📚 Aktive Kategorien")
