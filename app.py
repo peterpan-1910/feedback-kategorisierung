@@ -191,34 +191,35 @@ if menu == "Regeln lernen":
         suggestions = sorted(unmatched_words.items(), key=lambda x: x[1], reverse=True)[:30]
         st.markdown("### 🔍 Häufige unbekannte Wörter aus 'Sonstiges'")
         for word, count in suggestions:
-            col1, col2 = st.columns([3, 2])
-            col1.write(f"{word} ({count}x)")
-            from difflib import get_close_matches
+        col1, col2 = st.columns([3, 2])
+        col1.write(f"{word} ({count}x)")
 
-# Sammle alle Begriffe aus den Kategorien
-flat_terms = {cat: term for cat, terms in all_rules.items() for term in terms}
-term_matches = get_close_matches(word, flat_terms.values(), n=1, cutoff=0.6)
+        from difflib import get_close_matches
+        flat_terms = {cat: term for cat, terms in all_rules.items() for term in terms}
+        term_matches = get_close_matches(word, flat_terms.values(), n=1, cutoff=0.6)
+        best_term = term_matches[0] if term_matches else None
+        term_category = next((cat for cat, term in flat_terms.items() if term == best_term), None)
+        cat_matches = get_close_matches(word, all_rules.keys(), n=1, cutoff=0.4)
+        category_suggestion = term_category if term_category else (cat_matches[0] if cat_matches else "Ignorieren")
 
-# Wenn ein Begriff ähnlich ist, ermittle seine Kategorie
-best_term = term_matches[0] if term_matches else None
-term_category = next((cat for cat, term in flat_terms.items() if term == best_term), None)
+        if category_suggestion != "Ignorieren":
+            default_index = ["Ignorieren"] + sorted(all_rules.keys()).index(category_suggestion) + 1
+        else:
+            default_index = 0
 
-# Alternativ fallback auf Kategorie-Namen
-cat_matches = get_close_matches(word, all_rules.keys(), n=1, cutoff=0.4)
-category_suggestion = term_category if term_category else (cat_matches[0] if cat_matches else "Ignorieren")
-def_suggestion = suggestion[0] if suggestion else "Ignorieren"
-selected = col2.selectbox("Kategorie zuweisen", ["Ignorieren"] + sorted(all_rules.keys()), index=["Ignorieren"] + sorted(all_rules.keys()).index(category_suggestion) if category_suggestion != "Ignorieren" else 0, key=f"assign_{word}")
-            if selected != "Ignorieren":
-                all_rules[selected].append(word)
-                # Log speichern
-                with open("rule_log.csv", "a", encoding="utf-8") as log:
-                    import datetime
-                    log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}
+        selected = col2.selectbox("Kategorie zuweisen", ["Ignorieren"] + sorted(all_rules.keys()), index=default_index, key=f"assign_{word}")
+
+        if selected != "Ignorieren":
+            all_rules[selected].append(word)
+            # Log speichern
+            with open("rule_log.csv", "a", encoding="utf-8") as log:
+                import datetime
+                log.write(f"{datetime.datetime.now().isoformat()};{word};{selected}
 ")
-                with open(rules_file, "w") as f:
-                    json.dump(all_rules, f, indent=2)
-                st.success(f"'{word}' wurde der Kategorie '{selected}' hinzugefügt")
-                st.experimental_rerun()
+            with open(rules_file, "w") as f:
+                json.dump(all_rules, f, indent=2)
+            st.success(f"'{word}' wurde der Kategorie '{selected}' hinzugefügt")
+            st.experimental_rerun()
     st.stop()
 
 # ------------------ Datei-Upload und Kategorisierung ------------------
