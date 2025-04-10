@@ -50,6 +50,9 @@ def show_login_ui():
 
 
 # entfernt aus Analyse-Bereich
+
+menu = st.sidebar.radio("Navigiere zu", ["Regeln lernen", "Analyse"])
+
 rules_file = "custom_rules.json"
 default_rules = all_rules.copy() if 'all_rules' in globals() else {}
 if os.path.exists(rules_file):
