@@ -38,8 +38,6 @@ def show_login_ui():
             st.session_state.logged_in = True
         else:
             st.error("❌ Falscher Benutzername oder Passwort")
-
-                st.markdown("---")
         st.subheader("➕ Neue Regel hinzufügen")
     new_keyword = st.text_input("🔤 Schlüsselwort")
     selected_category = st.selectbox("📌 Zielkategorie", sorted(all_rules.keys())) if all_rules else st.text_input("📌 Neue Kategorie")
