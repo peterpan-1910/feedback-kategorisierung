@@ -36,7 +36,6 @@ def show_login_ui():
     if login_button:
         if check_login(username, password):
             st.session_state.logged_in = True
-            st.experimental_rerun()
         else:
             st.error("❌ Falscher Benutzername oder Passwort")
 
@@ -47,6 +46,7 @@ if "logged_in" not in st.session_state:
 
 if not st.session_state.logged_in:
     show_login_ui()
+    st.experimental_rerun()
     st.stop()
 
 # ------------------ Nach dem Login ------------------
