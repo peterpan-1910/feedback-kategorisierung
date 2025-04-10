@@ -193,14 +193,15 @@ if uploaded_file:
     else:
         with st.spinner("Analysiere Feedback..."):
             import json
-rules_file = "custom_rules.json"
-try:
-    with open(rules_file, "r") as f:
-        saved_rules = json.load(f)
-except:
-    saved_rules = {}
-rules = {**saved_rules, **st.session_state.get("custom_rules", {})}
+            rules_file = "custom_rules.json"
+            try:
+                with open(rules_file, "r") as f:
+                    saved_rules = json.load(f)
+            except:
+                saved_rules = {}
+            rules = {**saved_rules, **st.session_state.get("custom_rules", {})}
             df['Kategorie'] = df['Feedback'].astype(str).apply(lambda x: kategorisieren_feedback(x, rules))
+
 
         st.success("Analyse abgeschlossen")
         st.dataframe(df[['Feedback', 'Kategorie']])
