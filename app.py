@@ -54,6 +54,15 @@ st.title("📊 Regelbasierte Feedback-Kategorisierung")
 
 # ------------------ Kategorien & Regelverwaltung ------------------
 
+# Sidebar Übersicht
+st.sidebar.header("📚 Aktive Kategorien")
+if all_rules:
+    for k in sorted(all_rules.keys()):
+        st.sidebar.markdown(f"✅ {k} ({len(all_rules[k])} Begriffe)")
+else:
+    st.sidebar.info("Noch keine Kategorien vorhanden.")
+
+
 st.subheader("🗂️ Kategorien und zugehörige Schlüsselwörter")
 rules_file = "custom_rules.json"
 if os.path.exists(rules_file):
