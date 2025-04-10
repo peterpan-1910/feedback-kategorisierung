@@ -91,10 +91,8 @@ if menu == "Regeln lernen":
     with st.expander("🧠 Kategorien & Schlüsselwörter anzeigen", expanded=False):
         if all_rules:
             for cat, terms in sorted(all_rules.items()):
-                with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
-                    st.markdown(", ".join(sorted(terms)))
-
-    st.markdown("---")
+                with st.container():
+                    st.markdown(f"<details><summary><strong>📁 {cat} ({len(terms)} Begriffe)</strong></summary><p>{', '.join(sorted(terms))}</p></details>", unsafe_allow_html=True)
     st.subheader("✏️ Schlüsselwörter verwalten")
     if all_rules:
         for cat, terms in sorted(all_rules.items()):
