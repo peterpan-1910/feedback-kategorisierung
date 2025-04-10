@@ -82,14 +82,14 @@ else:
         "Gebühren": ["gebühr", "zinsen", "bearbeitungsgebühr", "kosten", "preis", "zu teuer", "gebühren nicht klar", "versteckte kosten", "nicht kostenlos", "zusatzkosten"]
     }
 
-# Sidebar Übersicht
-right_column = st.sidebar.container()
-right_column.header("📚 Aktive Kategorien")
-if all_rules:
-    for k in sorted(all_rules.keys()):
-        right_column.markdown(f"✅ {k} ({len(all_rules[k])} Begriffe)")
-else:
-    right_column.info("Noch keine Kategorien vorhanden.")
+# Sidebar Übersicht als rechte Spalte auf Hauptseite
+st.markdown("## 🧠 Kategorien-Übersicht")
+with st.expander("📚 Aktive Kategorien & Anzahl der Keywords", expanded=True):
+    if all_rules:
+        for k in sorted(all_rules.keys()):
+            st.markdown(f"- **{k}**: {len(all_rules[k])} Begriffe")
+    else:
+        st.info("Noch keine Kategorien vorhanden.")
 
 
 st.subheader("🗂️ Kategorien und zugehörige Schlüsselwörter")
