@@ -92,11 +92,36 @@ if menu == "Regeln lernen":
     st.markdown("## 🧠 Kategorien-Übersicht")
     with st.expander("📚 Aktive Kategorien & Anzahl der Keywords", expanded=False):
         if all_rules:
-            for k in sorted(all_rules.keys()):
-                st.markdown(f"### 📁 {k} ({len(all_rules[k])} Begriffe)")
-                st.markdown(", ".join(sorted(all_rules[k])))
+            for cat, terms in sorted(all_rules.items()):
+                with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
+                    updated_terms = []
+                    for term in sorted(set(terms)):
+                        col1, col2, col3 = st.columns([4, 1, 1])
+                        new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
+                        if new_term != term:
+                            updated_terms.append(new_term.lower())
+                        else:
+                            updated_terms.append(term)
+                        if col2.button("↩️", key=f"reset_{cat}_{term}"):
+                            updated_terms.append(term)
+                        if col3.button("❌", key=f"delete_{cat}_{term}"):
+                            terms.remove(term)
+                    all_rules[cat] = list(set(updated_terms))
+                    with open(rules_file, "w") as f:
+                        json.dump(all_rules, f, indent=2)
         else:
             st.info("Noch keine Kategorien vorhanden.")
+
+    st.markdown("---")
+    st.subheader("➕ Neue Regel hinzufügen")
+    new_keyword = st.text_input("🔤 Schlüsselwort")
+    selected_category = st.selectbox("📌 Zielkategorie", sorted(all_rules.keys())) if all_rules else st.text_input("📌 Neue Kategorie")
+    if st.button("✅ Regel speichern") and new_keyword:
+        all_rules.setdefault(selected_category, []).append(new_keyword.lower())
+        with open(rules_file, "w") as f:
+            json.dump(all_rules, f, indent=2)
+        st.success(f"Regel gespeichert für '{selected_category}': {new_keyword}")
+        st.experimental_rerun()
 
 
 # entfernt aus Analyse-Bereich
