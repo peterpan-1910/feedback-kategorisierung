@@ -46,17 +46,6 @@ if "logged_in" not in st.session_state:
 
 if not st.session_state.logged_in:
     show_login_ui()
-        if os.path.exists("rule_log.csv"):
-        with open("rule_log.csv", "rb") as log_file:
-            st.download_button("📥 Log als CSV herunterladen", log_file, file_name="regel_log.csv", mime="text/csv")
-
-        # Log auch als Excel anbieten
-        df_log = pd.read_csv("rule_log.csv", sep=";")
-        excel_log_path = "regel_log.xlsx"
-        df_log.to_excel(excel_log_path, index=False)
-        with open(excel_log_path, "rb") as xl_file:
-            st.download_button("📥 Log als Excel herunterladen", xl_file, file_name="regel_log.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
     st.stop()
 
 # ------------------ Nach dem Login ------------------
