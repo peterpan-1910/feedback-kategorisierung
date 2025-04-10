@@ -94,7 +94,7 @@ if menu == "Regeln lernen":
                 with st.container():
                     st.markdown(f"<details><summary><strong>📁 {cat} ({len(terms)} Begriffe)</strong></summary><p>{', '.join(sorted(terms))}</p></details>", unsafe_allow_html=True)
     with st.expander("✏️ Schlüsselwörter verwalten", expanded=False):
-    if all_rules:
+        if all_rules:
         for cat, terms in sorted(all_rules.items()):
             st.markdown(f"#### {cat}")
             updated_terms = []
@@ -114,7 +114,7 @@ if menu == "Regeln lernen":
                 json.dump(all_rules, f, indent=2)
 
         st.markdown("---")
-    st.subheader("➕ Neue Regel hinzufügen")
+            st.subheader("➕ Neue Regel hinzufügen")
     new_keyword = st.text_input("🔤 Schlüsselwort")
     selected_category = st.selectbox("📌 Zielkategorie", sorted(all_rules.keys())) if all_rules else st.text_input("📌 Neue Kategorie")
     if st.button("✅ Regel speichern") and new_keyword:
