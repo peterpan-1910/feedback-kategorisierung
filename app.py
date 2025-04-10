@@ -33,8 +33,10 @@ def show_login_ui():
     password = st.text_input("🔑 Passwort", type="password")
     login_button = st.button("🚀 Loslegen")
 
-    if login_button and check_login(username, password):
+    if login_button:
+        if check_login(username, password):
             st.session_state.logged_in = True
+            st.experimental_rerun()
         else:
             st.error("❌ Falscher Benutzername oder Passwort")
 
