@@ -36,6 +36,7 @@ def show_login_ui():
     if login_button:
         if check_login(username, password):
             st.session_state.logged_in = True
+            st.experimental_rerun()
         else:
             st.error("❌ Falscher Benutzername oder Passwort")
 
@@ -51,7 +52,7 @@ if not st.session_state.logged_in:
 # ------------------ Nach dem Login ------------------
 
 st.title("📊 Regelbasierte Feedback-Kategorisierung")
-menu = st.sidebar.radio("Navigiere zu", ["Analyse", "Regeln lernen"])
+menu = st.sidebar.radio("Navigiere zu", ["Analyse", "Kategorien verwalten", "Regeln lernen"])
 
 if menu == "Kategorien verwalten":
     
@@ -87,61 +88,59 @@ else:
         "Gebühren": ["gebühr", "zinsen", "bearbeitungsgebühr", "kosten", "preis", "zu teuer", "gebühren nicht klar", "versteckte kosten", "nicht kostenlos", "zusatzkosten", "gebühren unklar", "bankgebühren", "gebührenerhöhung", "nicht transparent", "kosten zu hoch", "gebührenänderung", "kontoführungsgebühr", "auszahlungsgebühr", "transaktionsgebühr", "gebühr zu hoch", "zu hohe zinsen", "gebühreninfo fehlt", "unverhältnismäßige gebühr", "gebühr nicht nachvollziehbar", "entgelt", "gebührenbelastung", "gebühr nicht verständlich", "servicegebühr", "provision", "kostenaufstellung fehlt"]
     }
 
-if menu == "Regeln lernen":
-    with st.expander("🧠 Kategorien & Schlüsselwörter anzeigen", expanded=False):
-        if all_rules:
-            for cat, terms in sorted(all_rules.items()):
-                with st.container():
-                    st.markdown(f"<details><summary><strong>📁 {cat} ({len(terms)} Begriffe)</strong></summary><p>{', '.join(sorted(terms))}</p></details>", unsafe_allow_html=True)
-    with st.expander("✏️ Schlüsselwörter verwalten", expanded=False):
-        if all_rules:
-            for cat, terms in sorted(all_rules.items()):
-                                                with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=False):
-                                                    updated_terms = []
-                                                    for term in sorted(set(terms)):
-                                                                col1, col2, col3 = st.columns([4, 1, 1])
-                                                                new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
-                                                                if new_term != term:
-                    updated_terms.append(new_term.lower())
-                                                                else:
-                            updated_terms.append(term)
-                                                                if col2.button("↩️", key=f"reset_{cat}_{term}"):
-                    updated_terms.append(term)
-                                                                if col3.button("❌", key=f"delete_{cat}_{term}"):
-                    continue  # gelöscht
-                                                    all_rules[cat] = list(set(updated_terms))
-                                                    with open(rules_file, "w") as f:
-                                                                json.dump(all_rules, f, indent=2)
-
-                st.markdown("---")
-        st.subheader("➕ Neue Regel hinzufügen")
-    new_keyword = st.text_input("🔤 Schlüsselwort")
-    selected_category = st.selectbox("📌 Zielkategorie", sorted(all_rules.keys())) if all_rules else st.text_input("📌 Neue Kategorie")
-    if st.button("✅ Regel speichern") and new_keyword:
-        all_rules.setdefault(selected_category, []).append(new_keyword.lower())
-        with open(rules_file, "w") as f:
-            json.dump(all_rules, f, indent=2)
-        st.success(f"Regel gespeichert für '{selected_category}': {new_keyword}")
-        st.experimental_rerun()
+# Sidebar Übersicht als rechte Spalte auf Hauptseite
+st.markdown("## 🧠 Kategorien-Übersicht")
+with st.expander("📚 Aktive Kategorien & Anzahl der Keywords", expanded=True):
+    if all_rules:
+        for k in sorted(all_rules.keys()):
+            st.markdown(f"- **{k}**: {len(all_rules[k])} Begriffe")
+    else:
+        st.info("Noch keine Kategorien vorhanden.")
 
 
-# entfernt aus Analyse-Bereich
+st.subheader("🗂️ Kategorien und zugehörige Schlüsselwörter")
 rules_file = "custom_rules.json"
 default_rules = all_rules.copy() if 'all_rules' in globals() else {}
 if os.path.exists(rules_file):
     with open(rules_file, "r") as f:
         loaded_rules = json.load(f)
-    # Ersetze Einträge mit denen aus dem Code (nicht nur ergänzen)
     for key, value in default_rules.items():
-        if key not in loaded_rules or len(loaded_rules[key]) < len(value):
-            loaded_rules[key] = value
+        loaded_rules.setdefault(key, value)
     all_rules = loaded_rules
 else:
     all_rules = default_rules
 
+for cat, terms in sorted(all_rules.items()):
+    terms = list(set(terms))  # Duplikate sicher entfernen und vollständige Liste anzeigen
+    with st.expander(f"📁 {cat} ({len(terms)} Begriffe)", expanded=True):
+        updated_terms = []
+        for term in sorted(set(terms)):
+            col1, col2, col3 = st.columns([4, 1, 1])
+            new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
+            if new_term != term:
+                updated_terms.append(new_term.lower())
+            else:
+                updated_terms.append(term)
+            if col2.button("↩️", key=f"reset_{cat}_{term}"):
+                updated_terms.append(term)
+            if col3.button("❌", key=f"delete_{cat}_{term}"):
+                terms.remove(term)
+        all_rules[cat] = list(set(updated_terms))
+        with open(rules_file, "w") as f:
+            json.dump(all_rules, f, indent=2)
 
+st.markdown("---")
 
-
+# Regel hinzufügen
+st.subheader("➕ Neue Regel hinzufügen")
+new_keyword = st.text_input("🔤 Schlüsselwort")
+selected_category = st.selectbox("📌 Zielkategorie", sorted(all_rules.keys())) if all_rules else st.text_input("📌 Neue Kategorie")
+if st.button("✅ Regel speichern") and new_keyword:
+    all_rules.setdefault(selected_category, []).append(new_keyword.lower())
+    with open(rules_file, "w") as f:
+        json.dump(all_rules, f, indent=2)
+    st.success(f"Regel gespeichert für '{selected_category}': {new_keyword}")
+    st.experimental_rerun()
 
 # ------------------ Regel-Lernen ------------------
 
