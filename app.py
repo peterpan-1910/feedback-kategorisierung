@@ -1,16 +1,11 @@
-# Projektstruktur und Module (kein direkter Code mit Sonderzeichen)
-
-### config.py
-```python
+# config.py
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
 RULES_PATH = BASE_DIR / "data" / "custom_rules.json"
 LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
-```
 
-### auth.py
-```python
+# auth.py
 import hashlib
 import streamlit as st
 
@@ -22,31 +17,24 @@ _USERS = {
 def login(username: str, password: str) -> bool:
     hashed = hashlib.sha256(password.encode()).hexdigest()
     return _USERS.get(username) == hashed
-```
 
-### rules_manager.py
-```python
+# rules_manager.py
 import json
 from streamlit import cache_data
 from config import RULES_PATH
 
 @cache_data(show_spinner=False)
 def load_rules() -> dict[str, list[str]]:
-    # Stelle sicher, dass die Datei existiert
     if not RULES_PATH.exists():
         RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
-        # Leere JSON-Struktur initialisieren
         RULES_PATH.write_text(json.dumps({}, indent=2, ensure_ascii=False), encoding="utf-8")
-    # Lade Regeln aus JSON
     return json.loads(RULES_PATH.read_text(encoding="utf-8"))
 
 @cache_data(show_spinner=False)
 def save_rules(rules: dict[str, list[str]]) -> None:
     RULES_PATH.write_text(json.dumps(rules, indent=2, ensure_ascii=False), encoding="utf-8")
-```
 
-### categorizer.py
-```python
+# categorizer.py
 import re
 from streamlit import cache_data
 
@@ -66,10 +54,8 @@ def categorize(text: str, patterns: dict[str, re.Pattern]) -> str:
         if pat.search(text):
             return cat
     return "Sonstiges"
-```
 
-### ui_components.py
-```python
+# ui_components.py
 import streamlit as st
 from auth import login
 
@@ -86,10 +72,8 @@ def show_login():
 
 def sidebar_menu(options: list[str]) -> str:
     return st.sidebar.radio("Navigation", options)
-```
 
-### app.py
-```python
+# app.py
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -98,15 +82,15 @@ from ui_components import show_login, sidebar_menu
 from rules_manager import load_rules, save_rules
 from categorizer import build_pattern_map, categorize
 from config import LOG_PATH
+import json
+import datetime
 
-# Authentifizierung
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if not st.session_state.authenticated:
     show_login()
     st.stop()
 
-# Lade Regeln und erstelle Patterns
 rules = load_rules()
 patterns = build_pattern_map(rules)
 mode = sidebar_menu(["Analyse", "Regeln verwalten", "Regeln lernen"])
@@ -163,14 +147,12 @@ elif mode == "Regeln lernen":
         for word, cnt in suggestions:
             cols = st.columns([3,2])
             cols[0].write(f"{word} ({cnt}x)")
-            sel = cols[1].selectbox("Kategorie", ["Ignorieren"]+sorted(rules), key=word)
+            sel = cols[1].selectbox("Kategorie", ["Ignorieren"] + sorted(rules), key=word)
             if sel != "Ignorieren":
                 rules.setdefault(sel, []).append(word)
                 with open(LOG_PATH, 'a', encoding='utf-8') as log:
-                    import datetime
                     log.write(f"{datetime.datetime.now().isoformat()};{word};{sel}\n")
                 save_rules(rules)
                 st.experimental_rerun()
 
 save_rules(rules)
-```
