@@ -1,22 +1,6 @@
-## Projektstruktur
+# Projektstruktur siehe README
 
-```
-feedback_app/
-├── app.py              # Haupt-Entrypoint
-├── auth.py             # Benutzerverwaltung und Login
-├── config.py           # Pfade und Konstanten
-├── rules_manager.py    # Laden, Cachen und Speichern der Regeln inkl. Default Rules
-├── categorizer.py      # Feedback-Kategorisierung (Performance-Optimiert)
-├── ui_components.py    # Wiederverwendbare UI-Elemente (Login, Menüs, Forms)
-├── requirements.txt    # Abhängigkeiten
-└── data/
-    ├── custom_rules.json  # Persistierte Regeln
-    └── rule_log.csv       # Log learn-Regeln
-```
-
----
-
-### 1. `config.py`
+### 1. `config.py` `config.py`
 ```python
 from pathlib import Path
 
