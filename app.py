@@ -9,14 +9,16 @@ LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
 import hashlib
 import streamlit as st
 
-# Nutzer-Hashes in Streamlit-Secrets
-_USERS = {
-    st.secrets.credentials.username: st.secrets.credentials.password_hash
-}
+# Nutzer-Hashes in Streamlit-Secrets (als Dict zugänglich)
+creds = st.secrets.get("credentials", {})
+_USERS = {}
+if creds.get("username") and creds.get("password_hash"):
+    _USERS = {creds["username"]: creds["password_hash"]}
 
+# Login-Funktion prüft Username/Password-Hash
 def login(username: str, password: str) -> bool:
     hashed = hashlib.sha256(password.encode()).hexdigest()
-    return _USERS.get(username) == hashed
+    return _USERs.get(username) == hashed
 
 # rules_manager.py
 import json
