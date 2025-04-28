@@ -59,20 +59,27 @@ def categorize(text: str, patterns: dict[str, re.Pattern]) -> str:
 
 # UI-Komponenten
 def show_login():
-    st.markdown("## 🔐 Anmeldung")
-    st.text_input("Benutzername", key="user_input")
-    st.text_input("Passwort", type="password", key="pwd_input")
-    if st.button("Loslegen"):
-        if login(st.session_state.user_input, st.session_state.pwd_input):
+    username = st.text_input("Benutzername", key="user_input")
+    password = st.text_input("Passwort", type="password", key="pwd_input")
+    login_clicked = st.button("Loslegen")
+    if login_clicked:
+        if login(username, password):
             st.session_state.authenticated = True
-            st.experimental_rerun()
+            return True
         else:
             st.error("Falsche Anmeldedaten")
+    return False
 
 def sidebar_menu(options: list[str]) -> str:
     return st.sidebar.radio("Navigation", options)
 
 # Hauptprogramm
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if not st.session_state.authenticated:
+    if show_login():
+        st.experimental_rerun()
+    st.stop()
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if not st.session_state.authenticated:
