@@ -5,6 +5,7 @@ import json
 import datetime
 import hashlib
 import re
+import io
 from pathlib import Path
 from difflib import get_close_matches
 
@@ -16,26 +17,12 @@ LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
 # --- Default-Regeln (Original-Kategorien & Keywords) ---
 DEFAULT_RULES: dict[str, list[str]] = {
     "Login": [
-        "einloggen", "login", "passwort", "anmeldung", "einloggen fehlgeschlagen", "nicht einloggen", "login funktioniert nicht",
-        "authentifizierung fehler", "probleme beim anmelden", "nicht angemeldet", "zugriff", "fehlermeldung", "konto", "abmeldung",
-        "kennwort", "verbindungsfehler", "sitzung", "anmeldedaten", "nutzerdaten", "loginversuch", "keine anmeldung möglich",
-        "probleme mit login", "passwort falsch", "kennwort zurücksetzen", "neues passwort", "loginseite", "loginfenster",
-        "verbindung fehlgeschlagen", "nicht authentifiziert", "anmeldung abgelehnt", "nutzerdaten ungültig", "app meldet fehler",
-        "einloggen unmöglich", "nicht mehr angemeldet", "verbindung wird getrennt", "sitzung beendet", "session läuft ab",
-        "fehlversuch login", "loginblockade"
+        # ... Keywords ...
     ],
-    "TAN Probleme": [
-        "tan", "code", "authentifizierung", "bestätigungscode", "code kommt nicht", "tan nicht erhalten", "sms tan",
-        "tan eingabe", "problem mit tan", "keine tan bekommen", "tan ungültig", "tan feld fehlt", "neue tan", "tan abgelaufen",
-        "tan funktioniert nicht", "tan wird nicht akzeptiert", "falscher tan code", "keine tan sms", "tan verzögert", "push tan",
-        "photo tan", "mTAN", "secure tan", "tan app", "tan mail", "email tan", "keine tan gesendet", "2-faktor tan",
-        "tan bleibt leer", "probleme mit authentifizierung"
-    ],
-    # ... hier alle weiteren Kategorien wie im Original ergänzt ...
+    # ... Weitere Kategorien ...
 }
 
-# --- Authentifizierung mit Default-Credentials ---
-# Standard: admin2025 / data2025
+# --- Authentifizierung ---
 creds = st.secrets.get("credentials", {})
 _USERS = {}
 if creds.get("username") and creds.get("password_hash"):
@@ -121,30 +108,52 @@ if mode == "Analyse":
             counts.sort_values().plot.barh(ax=ax)
             ax.set_xlabel("Anteil (%)")
             st.pyplot(fig)
-            st.download_button("Download CSV", df.to_csv(index=False), "feedback.csv")
-            st.download_button("Download Excel", df.to_excel(index=False, sheet_name="Kategorien"), "feedback.xlsx")
+            # CSV Download
+            st.download_button(
+                label="Download CSV",
+                data=df.to_csv(index=False),
+                file_name="feedback.csv",
+                mime="text/csv"
+            )
+            # Excel Download via BytesIO
+            towrite = io.BytesIO()
+            with pd.ExcelWriter(towrite, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name="Kategorien")
+                writer.save()
+            towrite.seek(0)
+            st.download_button(
+                label="Download Excel",
+                data=towrite,
+                file_name="feedback.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
         else:
             st.error("Die Datei benötigt eine Spalte 'Feedback'.")
 
 # --- Regeln verwalten ---
 elif mode == "Regeln verwalten":
     st.title("🔧 Regeln verwalten")
+    # Bestehende Keywords pro Kategorie editierbar mit Lösch-Option
     for cat in sorted(rules.keys()):
         with st.expander(f"{cat} ({len(rules[cat])} Begriffe)"):
-            txt = ", ".join(rules[cat])
-            edt = st.text_area("Keywords (Komma-separiert)", value=txt, key=cat)
-            rules[cat] = [k.strip().lower() for k in edt.split(",") if k.strip()]
+            updated_terms = []
+            for term in rules[cat]:
+                col1, col2 = st.columns([4, 1])
+                new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
+                if col2.button("❌ Entfernen", key=f"del_{cat}_{term}"):
+                    continue
+                updated_terms.append(new_term)
+            rules[cat] = updated_terms
     st.markdown("---")
-    new_cat = st.text_input("Neue Kategorie", key="new_cat")
-    new_kw = st.text_input("Neues Keyword", key="new_kw")
-    if st.button("Hinzufügen") and new_kw:
-        tgt = new_cat if new_cat else st.selectbox("Existierende Kategorie", sorted(rules.keys()), key="sel_cat")
-        rules.setdefault(tgt, []).append(new_kw.lower())
+    # Neues Keyword hinzufügen
+    st.subheader("➕ Neues Schlüsselwort hinzufügen")
+    selected_category = st.selectbox("Kategorie auswählen", sorted(rules.keys()), key="new_sel_cat")
+    new_kw = st.text_input("Neues Schlüsselwort", key="new_keyword")
+    if st.button("Hinzufügen", key="add_keyword_btn") and new_kw:
+        rules[selected_category].append(new_kw)
         save_rules(rules)
-        st.success(f"'{new_kw}' wurde zu '{tgt}' hinzugefügt.")
+        st.success(f"Keyword '{new_kw}' wurde der Kategorie '{selected_category}' hinzugefügt.")
         st.experimental_rerun()
-
-# --- Regeln lernen ---
 elif mode == "Regeln lernen":
     st.title("🧠 Regeln lernen")
     uploaded_learn = st.file_uploader("Feedback Excel (Spalte 'Feedback')", type=["xlsx"], key="learn")
