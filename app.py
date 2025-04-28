@@ -32,7 +32,6 @@ def login(user: str, pwd: str) -> bool:
     return _USERS.get(user) == hashlib.sha256(pwd.encode()).hexdigest()
 
 # --- Regeln laden/speichern ---
-@st.cache_data
 def load_rules():
     if not RULES_PATH.exists():
         RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -42,12 +41,10 @@ def load_rules():
         data.setdefault(cat, terms.copy())
     return data
 
-@st.cache_data
 def save_rules(rules):
     RULES_PATH.write_text(json.dumps(rules, indent=2, ensure_ascii=False), encoding="utf-8")
 
 # --- Kategorisierung ---
-@st.cache_data
 def build_patterns(rules):
     pats = {}
     for cat, terms in rules.items():
@@ -56,7 +53,6 @@ def build_patterns(rules):
             pats[cat] = re.compile(r"\b(?:%s)\b" % "|".join(esc), re.IGNORECASE)
     return pats
 
-@st.cache_data
 def categorize(text, pats):
     for cat, pat in pats.items():
         if pat.search(text):
