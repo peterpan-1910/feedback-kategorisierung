@@ -62,16 +62,18 @@ def categorize(text, pats):
     return "Sonstiges"
 
 # --- UI: Login ---
-def show_login():
+def show_login() -> bool:
     st.markdown("<div style='text-align:center;'><h1>🔐 Login</h1></div>", unsafe_allow_html=True)
     user = st.text_input("👤 User", key="user_input")
     pwd = st.text_input("🔑 Pass", type="password", key="pwd_input")
-    if st.button("🚀 Login"):
+    login_clicked = st.button("🚀 Login")
+    if login_clicked:
         if login(user, pwd):
             st.session_state.authenticated = True
-            st.experimental_rerun()
+            return True
         else:
             st.error("❌ Invalid credentials")
+    return False
 
 # --- Main ---
 if "authenticated" not in st.session_state:
