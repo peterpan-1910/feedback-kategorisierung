@@ -10,6 +10,9 @@ from pathlib import Path
 from difflib import get_close_matches
 
 # --- Konfiguration & Caching ---
+# Default-Regeln aus JSON; Initial befüllt über existing custom_rules.json
+DEFAULT_RULES: dict[str, list[str]] = {}
+
 BASE_DIR = Path(__file__).parent
 RULES_PATH = BASE_DIR / "data" / "custom_rules.json"
 LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
