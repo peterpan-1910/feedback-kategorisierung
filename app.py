@@ -133,28 +133,41 @@ if mode == "Analyse":
 # --- Regeln verwalten ---
 elif mode == "Regeln verwalten":
     st.title("🔧 Regeln verwalten")
-    # Bestehende Keywords pro Kategorie editierbar mit Lösch-Option
+    # Bestehende Keywords pro Kategorie editierbar mit eindeutigen Keys
     for cat in sorted(rules.keys()):
         with st.expander(f"{cat} ({len(rules[cat])} Begriffe)"):
             updated_terms = []
-            for term in rules[cat]:
+            for i, term in enumerate(rules[cat]):
                 col1, col2 = st.columns([4, 1])
-                new_term = col1.text_input("", value=term, key=f"edit_{cat}_{term}")
-                if col2.button("❌ Entfernen", key=f"del_{cat}_{term}"):
-                    continue
-                updated_terms.append(new_term)
+                new_term = col1.text_input(
+                    label="",
+                    value=term,
+                    key=f"edit_{cat}_{i}"
+                )
+                if not col2.button(
+                    "❌ Entfernen",
+                    key=f"del_{cat}_{i}"
+                ):
+                    updated_terms.append(new_term)
             rules[cat] = updated_terms
     st.markdown("---")
     # Neues Keyword hinzufügen
     st.subheader("➕ Neues Schlüsselwort hinzufügen")
-    selected_category = st.selectbox("Kategorie auswählen", sorted(rules.keys()), key="new_sel_cat")
+    selected_category = st.selectbox(
+        "Kategorie auswählen",
+        options=sorted(rules.keys()),
+        key="new_sel_cat"
+    )
     new_kw = st.text_input("Neues Schlüsselwort", key="new_keyword")
     if st.button("Hinzufügen", key="add_keyword_btn") and new_kw:
         rules[selected_category].append(new_kw)
         save_rules(rules)
-        st.success(f"Keyword '{new_kw}' wurde der Kategorie '{selected_category}' hinzugefügt.")
+        st.success(
+            f"Keyword '{new_kw}' wurde der Kategorie '{selected_category}' hinzugefügt."
+        )
         st.experimental_rerun()
 elif mode == "Regeln lernen":
+
     st.title("🧠 Regeln lernen")
     uploaded_learn = st.file_uploader("Feedback Excel (Spalte 'Feedback')", type=["xlsx"], key="learn")
     if uploaded_learn:
