@@ -86,7 +86,7 @@ if not st.session_state.authenticated:
 rules = load_rules()
 patterns = build_patterns(rules)
 # Sidebar navigation
-choice = st.sidebar.radio("Modus", ["Analyse", "Regeln verwalten", "Regeln lernen"]）
+choice = st.sidebar.radio("Modus", ["Analyse", "Regeln verwalten", "Regeln lernen"])
 
 if choice == "Analyse":
     ...
