@@ -114,6 +114,7 @@ if mode == "Analyse":
 # --- Regeln verwalten ---
 elif mode == "Regeln verwalten":
     st.title("🔧 Regeln verwalten")
+    # Bestehende Kategorien & Keywords bearbeiten
     for cat in sorted(rules.keys()):
         with st.expander(f"{cat} ({len(rules[cat])} Begriffe)"):
             updated = []
@@ -125,10 +126,22 @@ elif mode == "Regeln verwalten":
                     updated.append(new_term)
             rules[cat] = updated
     st.markdown("---")
+    # Neue Kategorie erstellen
+    st.subheader("➕ Neue Kategorie hinzufügen")
+    new_cat_name = st.text_input("Name der neuen Kategorie", key="new_cat_name")
+    if st.button("Kategorie erstellen", key="create_cat") and new_cat_name:
+        if new_cat_name not in rules:
+            rules[new_cat_name] = []
+            save_rules(rules)
+            st.success(f"Kategorie '{new_cat_name}' wurde erstellt.")
+        else:
+            st.error(f"Kategorie '{new_cat_name}' existiert bereits.")
+    st.markdown("---")
+    # Neues Keyword hinzufügen
     st.subheader("➕ Neues Keyword hinzufügen")
     tgt = st.selectbox("Kategorie auswählen", sorted(rules.keys()), key="new_cat")
     new_kw = st.text_input("Neues Keyword", key="new_kw")
-    if st.button("Hinzufügen") and new_kw:
+    if st.button("Hinzufügen", key="add_kw") and new_kw:
         rules[tgt].append(new_kw)
         save_rules(rules)
         st.success(f"'{new_kw}' wurde zu '{tgt}' hinzugefügt.")
