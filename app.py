@@ -16,10 +16,7 @@ LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
 
 # --- Default-Regeln (Original-Kategorien & Keywords) ---
 DEFAULT_RULES: dict[str, list[str]] = {
-    "Login": [
-        # ... Keywords ...
-    ],
-    # ... Weitere Kategorien ...
+    # ... Kategorien ...
 }
 
 # --- Authentifizierung ---
@@ -69,13 +66,16 @@ def categorize(text: str, patterns: dict[str, re.Pattern]) -> str:
 
 # --- UI-Komponenten ---
 def show_login() -> bool:
-    user = st.text_input("Benutzername", key="user_input")
-    pwd = st.text_input("Passwort", type="password", key="pwd_input")
-    if st.button("Loslegen"):
+    st.markdown("<div style='text-align:center;'><h2>🔐 Anmeldung zur Feedback-Kategorisierung</h2></div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center;font-size:2rem;'>👤 🔑</div>", unsafe_allow_html=True)
+    user = st.text_input("👤 Benutzername", key="user_input")
+    pwd = st.text_input("🔑 Passwort", type="password", key="pwd_input")
+    login_clicked = st.button("🚀 Loslegen")
+    if login_clicked:
         if login(user, pwd):
             st.session_state.authenticated = True
             return True
-        st.error("Falsche Anmeldedaten")
+        st.error("❌ Falsche Anmeldedaten")
     return False
 
 def sidebar_menu(options: list[str]) -> str:
@@ -85,11 +85,11 @@ def sidebar_menu(options: list[str]) -> str:
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if not st.session_state.authenticated:
-    # Login anzeigen, ohne explizite erneuten Run auslösen
-    if not show_login():
+    if show_login():
+        st.experimental_rerun()
+    else:
         st.stop()
 
-# Nach erfolgreichem Login weiter
 rules = load_rules()
 patterns = build_pattern_map(rules)
 mode = sidebar_menu(["Analyse", "Regeln verwalten", "Regeln lernen"])
@@ -97,7 +97,7 @@ mode = sidebar_menu(["Analyse", "Regeln verwalten", "Regeln lernen"])
 # --- Analyse ---
 if mode == "Analyse":
     st.title("📊 Feedback-Kategorisierung")
-    uploaded = st.file_uploader("Excel upload (Spalte 'Feedback')", type=["xlsx"])
+    uploaded = st.file_uploader("Excel hochladen (Spalte 'Feedback')", type=["xlsx"])
     if uploaded:
         df = pd.read_excel(uploaded)
         if 'Feedback' in df.columns:
@@ -108,24 +108,16 @@ if mode == "Analyse":
             counts.sort_values().plot.barh(ax=ax)
             ax.set_xlabel("Anteil (%)")
             st.pyplot(fig)
-            # CSV Download
-            st.download_button(
-                label="Download CSV",
-                data=df.to_csv(index=False),
-                file_name="feedback.csv",
-                mime="text/csv"
-            )
-            # Excel Download via BytesIO
+            st.download_button("Download CSV", df.to_csv(index=False), "feedback.csv", "text/csv")
             towrite = io.BytesIO()
             with pd.ExcelWriter(towrite, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name="Kategorien")
                 writer.save()
             towrite.seek(0)
             st.download_button(
-                label="Download Excel",
-                data=towrite,
-                file_name="feedback.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                "Download Excel", towrite,
+                "feedback.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         else:
             st.error("Die Datei benötigt eine Spalte 'Feedback'.")
@@ -133,41 +125,27 @@ if mode == "Analyse":
 # --- Regeln verwalten ---
 elif mode == "Regeln verwalten":
     st.title("🔧 Regeln verwalten")
-    # Bestehende Keywords pro Kategorie editierbar mit eindeutigen Keys
     for cat in sorted(rules.keys()):
         with st.expander(f"{cat} ({len(rules[cat])} Begriffe)"):
             updated_terms = []
             for i, term in enumerate(rules[cat]):
                 col1, col2 = st.columns([4, 1])
-                new_term = col1.text_input(
-                    label="",
-                    value=term,
-                    key=f"edit_{cat}_{i}"
-                )
-                if not col2.button(
-                    "❌ Entfernen",
-                    key=f"del_{cat}_{i}"
-                ):
+                new_term = col1.text_input(label="", value=term, key=f"edit_{cat}_{i}")
+                if not col2.button("❌ Entfernen", key=f"del_{cat}_{i}"):
                     updated_terms.append(new_term)
             rules[cat] = updated_terms
     st.markdown("---")
-    # Neues Keyword hinzufügen
     st.subheader("➕ Neues Schlüsselwort hinzufügen")
-    selected_category = st.selectbox(
-        "Kategorie auswählen",
-        options=sorted(rules.keys()),
-        key="new_sel_cat"
-    )
+    selected_category = st.selectbox("Kategorie auswählen", sorted(rules.keys()), key="new_sel_cat")
     new_kw = st.text_input("Neues Schlüsselwort", key="new_keyword")
     if st.button("Hinzufügen", key="add_keyword_btn") and new_kw:
         rules[selected_category].append(new_kw)
         save_rules(rules)
-        st.success(
-            f"Keyword '{new_kw}' wurde der Kategorie '{selected_category}' hinzugefügt."
-        )
+        st.success(f"Keyword '{new_kw}' wurde der Kategorie '{selected_category}' hinzugefügt.")
         st.experimental_rerun()
-elif mode == "Regeln lernen":
 
+# --- Regeln lernen ---
+elif mode == "Regeln lernen":
     st.title("🧠 Regeln lernen")
     uploaded_learn = st.file_uploader("Feedback Excel (Spalte 'Feedback')", type=["xlsx"], key="learn")
     if uploaded_learn:
@@ -180,7 +158,7 @@ elif mode == "Regeln lernen":
                 if categorize(fb.lower(), patterns) == "Sonstiges":
                     for w in re.findall(r"\w{4,}", fb.lower()): unmatched[w] = unmatched.get(w,0)+1
             suggestions = sorted(unmatched.items(), key=lambda x: x[1], reverse=True)[:30]
-            st.subheader("Vorschläge für neue Keywords aus 'Sonstiges' (Top 30)")
+            st.subheader("Vorschläge für neue Keywords aus 'Sonstiges' (Top 30)")
             for word, cnt in suggestions:
                 cols = st.columns([4,2])
                 cols[0].write(f"{word} ({cnt}x)")
