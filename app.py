@@ -9,59 +9,61 @@ import io
 from pathlib import Path
 from difflib import get_close_matches
 
-# --- Konfiguration ---
+# --- Konfiguration & Caching ---
 BASE_DIR = Path(__file__).parent
 RULES_PATH = BASE_DIR / "data" / "custom_rules.json"
 LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
 
-# --- Default-Regeln ---
-DEFAULT_RULES = {
-    # (Kategorien mit vollständigen Keyword-Listen hier einfügen)
-}
-
-# --- Authentifizierung ---
+@st.experimental_memo
 def init_users():
     creds = st.secrets.get("credentials", {})
     if creds.get("username") and creds.get("password_hash"):
         return {creds["username"]: creds["password_hash"]}
     return {"admin2025": hashlib.sha256("data2025".encode()).hexdigest()}
 
-_USERS = init_users()
-
-def login(user: str, pwd: str) -> bool:
-    return _USERS.get(user) == hashlib.sha256(pwd.encode()).hexdigest()
-
-# --- Regeln laden/speichern ---
+@st.experimental_memo
 def load_rules():
     if not RULES_PATH.exists():
         RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
         RULES_PATH.write_text(json.dumps(DEFAULT_RULES, indent=2, ensure_ascii=False), encoding="utf-8")
     data = json.loads(RULES_PATH.read_text(encoding="utf-8"))
-    for cat, terms in DEFAULT_RULES.items():
-        data.setdefault(cat, terms.copy())
+    for cat, terms in DEFAULT_RULES.items(): data.setdefault(cat, terms.copy())
     return data
 
-def save_rules(rules):
-    RULES_PATH.write_text(json.dumps(rules, indent=2, ensure_ascii=False), encoding="utf-8")
-
-# --- Kategorisierung ---
+@st.experimental_memo
 def build_patterns(rules):
     pats = {}
     for cat, terms in rules.items():
         if terms:
-            esc = [re.escape(t) for t in terms]
-            pats[cat] = re.compile(r"\b(?:%s)\b" % "|".join(esc), re.IGNORECASE)
+            escaped = [re.escape(t) for t in terms]
+            pats[cat] = re.compile(r"\b(?:%s)\b" % "|".join(escaped), re.IGNORECASE)
     return pats
 
-def categorize(text, pats):
-    for cat, pat in pats.items():
-        if pat.search(text):
-            return cat
-    return "Sonstiges"
+# For fast categorization: return vectorized series
+@st.experimental_memo
+def categorize_series(feedback_series, patterns):
+    df = pd.DataFrame({ 'Feedback': feedback_series })
+    df['Kategorie'] = 'Sonstiges'
+    for cat, pat in patterns.items():
+        mask = df['Feedback'].str.contains(pat)
+        df.loc[mask & (df['Kategorie'] == 'Sonstiges'), 'Kategorie'] = cat
+    return df['Kategorie']
+
+def save_rules(rules):
+    RULES_PATH.write_text(json.dumps(rules, indent=2, ensure_ascii=False), encoding="utf-8")
+    # Clear memoized caches
+    load_rules.clear()
+    build_patterns.clear()
+
+# --- Authentifizierung ---
+_USERS = init_users()
+
+def login(user: str, pwd: str) -> bool:
+    return _USERS.get(user) == hashlib.sha256(pwd.encode()).hexdigest()
 
 # --- UI: Login ---
 def show_login():
-    st.markdown("<div style='text-align:center;'><h1>🔐 Login</h1></div>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center;'>🔐 Login</h1>", unsafe_allow_html=True)
     user = st.text_input("👤 Benutzername", key="user_input")
     pwd = st.text_input("🔑 Passwort", type="password", key="pwd_input")
     if st.button("🚀 Anmelden"):
@@ -80,7 +82,7 @@ if not st.session_state.authenticated:
 # --- Flow: Modus-Auswahl ---
 rules = load_rules()
 patterns = build_patterns(rules)
-mode = st.sidebar.radio("Modus", ["Analyse", "Regeln verwalten", "Regeln lernen"] )
+mode = st.sidebar.radio("Modus", ["Analyse", "Regeln verwalten", "Regeln lernen"])
 
 # --- Analyse ---
 if mode == "Analyse":
@@ -89,13 +91,14 @@ if mode == "Analyse":
     if uploaded:
         df = pd.read_excel(uploaded)
         if 'Feedback' in df.columns:
-            df['Kategorie'] = df['Feedback'].astype(str).apply(lambda x: categorize(x, patterns))
+            df['Kategorie'] = categorize_series(df['Feedback'].astype(str), patterns)
             st.dataframe(df[['Feedback', 'Kategorie']])
             counts = df['Kategorie'].value_counts(normalize=True).mul(100)
             fig, ax = plt.subplots()
             counts.sort_values().plot.barh(ax=ax)
             ax.set_xlabel("Anteil (%)")
             st.pyplot(fig)
+            # Downloads
             st.download_button("Download CSV", df.to_csv(index=False), "feedback.csv", "text/csv")
             buf = io.BytesIO()
             with pd.ExcelWriter(buf, engine='openpyxl') as writer:
@@ -111,21 +114,21 @@ elif mode == "Regeln verwalten":
     for cat in sorted(rules.keys()):
         with st.expander(f"{cat} ({len(rules[cat])} Begriffe)"):
             updated = []
-            for i, term in enumerate(rules[cat]):
-                c1, c2 = st.columns([4,1])
-                new = c1.text_input("", value=term, key=f"edit_{cat}_{i}")
-                if not c2.button("❌ Entfernen", key=f"del_{cat}_{i}"):
+            for term in rules[cat]:
+                cols = st.columns([4,1])
+                new = cols[0].text_input("", value=term, key=f"edit_{cat}_{term}")
+                remove = cols[1].checkbox("❌", key=f"rem_{cat}_{term}")
+                if not remove:
                     updated.append(new)
             rules[cat] = updated
     st.markdown("---")
     st.subheader("➕ Neues Keyword hinzufügen")
     tgt = st.selectbox("Kategorie auswählen", sorted(rules.keys()), key="new_cat")
     new_kw = st.text_input("Neues Keyword", key="new_kw")
-    if st.button("Hinzufügen", key="add_kw") and new_kw:
+    if st.button("Hinzufügen") and new_kw:
         rules[tgt].append(new_kw)
         save_rules(rules)
         st.success(f"'{new_kw}' wurde zu '{tgt}' hinzugefügt.")
-        
 
 # --- Regeln lernen ---
 elif mode == "Regeln lernen":
@@ -151,7 +154,6 @@ elif mode == "Regeln lernen":
                         f.write(f"{datetime.datetime.now().isoformat()};{word};{choice}\n")
                     save_rules(rules)
                     st.success(f"'{word}' wurde zu '{choice}' hinzugefügt.")
-                    
 
 # --- Persistenz ---
 save_rules(rules)
