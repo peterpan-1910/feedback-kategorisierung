@@ -14,14 +14,14 @@ BASE_DIR = Path(__file__).parent
 RULES_PATH = BASE_DIR / "data" / "custom_rules.json"
 LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
 
-@st.experimental_memo
+@st.cache_data(show_spinner=False)
 def init_users():
     creds = st.secrets.get("credentials", {})
     if creds.get("username") and creds.get("password_hash"):
         return {creds["username"]: creds["password_hash"]}
     return {"admin2025": hashlib.sha256("data2025".encode()).hexdigest()}
 
-@st.experimental_memo
+@st.cache_data(show_spinner=False)
 def load_rules():
     if not RULES_PATH.exists():
         RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -30,7 +30,7 @@ def load_rules():
     for cat, terms in DEFAULT_RULES.items(): data.setdefault(cat, terms.copy())
     return data
 
-@st.experimental_memo
+@st.cache_data(show_spinner=False)
 def build_patterns(rules):
     pats = {}
     for cat, terms in rules.items():
@@ -40,7 +40,7 @@ def build_patterns(rules):
     return pats
 
 # For fast categorization: return vectorized series
-@st.experimental_memo
+@st.cache_data(show_spinner=False)
 def categorize_series(feedback_series, patterns):
     df = pd.DataFrame({ 'Feedback': feedback_series })
     df['Kategorie'] = 'Sonstiges'
