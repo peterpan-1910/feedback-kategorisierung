@@ -16,7 +16,7 @@ LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
 
 # --- Default-Regeln ---
 DEFAULT_RULES = {
-    # Hier vollständige Kategorien & Keywords einfügen
+    # (Kategorien mit vollständigen Keyword-Listen hier einfügen)
 }
 
 # --- Authentifizierung ---
@@ -38,7 +38,8 @@ def load_rules():
         RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
         RULES_PATH.write_text(json.dumps(DEFAULT_RULES, indent=2, ensure_ascii=False), encoding="utf-8")
     data = json.loads(RULES_PATH.read_text(encoding="utf-8"))
-    for cat, terms in DEFAULT_RULES.items(): data.setdefault(cat, terms.copy())
+    for cat, terms in DEFAULT_RULES.items():
+        data.setdefault(cat, terms.copy())
     return data
 
 @st.cache_data
@@ -58,30 +59,26 @@ def build_patterns(rules):
 @st.cache_data
 def categorize(text, pats):
     for cat, pat in pats.items():
-        if pat.search(text): return cat
+        if pat.search(text):
+            return cat
     return "Sonstiges"
 
 # --- UI: Login ---
-def show_login() -> bool:
+def show_login():
     st.markdown("<div style='text-align:center;'><h1>🔐 Login</h1></div>", unsafe_allow_html=True)
-    user = st.text_input("👤 User", key="user_input")
-    pwd = st.text_input("🔑 Pass", type="password", key="pwd_input")
-    login_clicked = st.button("🚀 Login")
-    if login_clicked:
+    user = st.text_input("👤 Benutzername", key="user_input")
+    pwd = st.text_input("🔑 Passwort", type="password", key="pwd_input")
+    if st.button("🚀 Anmelden"):
         if login(user, pwd):
             st.session_state.authenticated = True
-            return True
         else:
-            st.error("❌ Invalid credentials")
-    return False
+            st.error("❌ Ungültige Anmeldedaten")
 
 # --- Main ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if not st.session_state.authenticated:
-    # Zeige Login und ggf. Rerun
-    if show_login():
-        st.experimental_rerun()
+    show_login()
     st.stop()
 
 # --- Flow: Modus-Auswahl ---
@@ -91,13 +88,13 @@ mode = st.sidebar.radio("Modus", ["Analyse", "Regeln verwalten", "Regeln lernen"
 
 # --- Analyse ---
 if mode == "Analyse":
-    st.title("📊 Analyse")
-    uploaded = st.file_uploader("Excel (Spalte 'Feedback')", type=["xlsx"])
+    st.title("📊 Feedback-Kategorisierung")
+    uploaded = st.file_uploader("Excel-Datei (Spalte 'Feedback')", type=["xlsx"])
     if uploaded:
         df = pd.read_excel(uploaded)
         if 'Feedback' in df.columns:
             df['Kategorie'] = df['Feedback'].astype(str).apply(lambda x: categorize(x, patterns))
-            st.dataframe(df[['Feedback','Kategorie']])
+            st.dataframe(df[['Feedback', 'Kategorie']])
             counts = df['Kategorie'].value_counts(normalize=True).mul(100)
             fig, ax = plt.subplots()
             counts.sort_values().plot.barh(ax=ax)
@@ -110,7 +107,7 @@ if mode == "Analyse":
             buf.seek(0)
             st.download_button("Download Excel", buf, "feedback.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         else:
-            st.error("Spalte 'Feedback' fehlt.")
+            st.error("Spalte 'Feedback' nicht gefunden.")
 
 # --- Regeln verwalten ---
 elif mode == "Regeln verwalten":
@@ -121,17 +118,17 @@ elif mode == "Regeln verwalten":
             for i, term in enumerate(rules[cat]):
                 c1, c2 = st.columns([4,1])
                 new = c1.text_input("", value=term, key=f"edit_{cat}_{i}")
-                if not c2.button("❌", key=f"del_{cat}_{i}"):
+                if not c2.button("❌ Entfernen", key=f"del_{cat}_{i}"):
                     updated.append(new)
             rules[cat] = updated
     st.markdown("---")
     st.subheader("➕ Neues Keyword hinzufügen")
-    tgt = st.selectbox("Kategorie", sorted(rules.keys()), key="new_cat")
-    new_kw = st.text_input("Keyword", key="new_kw")
+    tgt = st.selectbox("Kategorie auswählen", sorted(rules.keys()), key="new_cat")
+    new_kw = st.text_input("Neues Keyword", key="new_kw")
     if st.button("Hinzufügen", key="add_kw") and new_kw:
         rules[tgt].append(new_kw)
         save_rules(rules)
-        st.success(f"'{new_kw}' zu '{tgt}' hinzugefügt.")
+        st.success(f"'{new_kw}' wurde zu '{tgt}' hinzugefügt.")
         st.experimental_rerun()
 
 # --- Regeln lernen ---
@@ -144,17 +141,20 @@ elif mode == "Regeln lernen":
             unmatched = {}
             for fb in df['Feedback'].astype(str):
                 if categorize(fb.lower(), patterns) == "Sonstiges":
-                    for w in re.findall(r"\w{4,}", fb.lower()): unmatched[w] = unmatched.get(w,0)+1
-            for w, cnt in sorted(unmatched.items(), key=lambda x:-x[1])[:30]:
-                cols = st.columns([4,2])
-                cols[0].write(f"{w} ({cnt}x)")
-                choice = cols[1].selectbox("Kategorie", ["Ignorieren"]+sorted(rules.keys()), key=w)
+                    for w in re.findall(r"\w{4,}", fb.lower()):
+                        unmatched[w] = unmatched.get(w, 0) + 1
+            suggestions = sorted(unmatched.items(), key=lambda x: x[1], reverse=True)[:30]
+            st.subheader("Vorschläge für neue Keywords aus 'Sonstiges'")
+            for word, cnt in suggestions:
+                cols = st.columns([4, 2])
+                cols[0].write(f"{word} ({cnt}x)")
+                choice = cols[1].selectbox("Kategorie", ["Ignorieren"] + sorted(rules.keys()), key=word)
                 if choice != "Ignorieren":
-                    rules.setdefault(choice, []).append(w)
+                    rules.setdefault(choice, []).append(word)
                     with open(LOG_PATH, 'a', encoding='utf-8') as f:
-                        f.write(f"{datetime.datetime.now().isoformat()};{w};{choice}\n")
+                        f.write(f"{datetime.datetime.now().isoformat()};{word};{choice}\n")
                     save_rules(rules)
-                    st.success(f"'{w}' zu '{choice}' hinzugefügt.")
+                    st.success(f"'{word}' wurde zu '{choice}' hinzugefügt.")
                     st.experimental_rerun()
 
 # --- Persistenz ---
