@@ -85,11 +85,11 @@ def sidebar_menu(options: list[str]) -> str:
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if not st.session_state.authenticated:
-    if show_login():
-        st.experimental_rerun()
-    else:
+    # Login anzeigen, ohne explizite erneuten Run auslösen
+    if not show_login():
         st.stop()
 
+# Nach erfolgreichem Login weiter
 rules = load_rules()
 patterns = build_pattern_map(rules)
 mode = sidebar_menu(["Analyse", "Regeln verwalten", "Regeln lernen"])
