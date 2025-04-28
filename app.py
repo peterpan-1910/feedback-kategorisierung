@@ -79,7 +79,9 @@ def show_login() -> bool:
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if not st.session_state.authenticated:
-    show_login()
+    # Zeige Login und ggf. Rerun
+    if show_login():
+        st.experimental_rerun()
     st.stop()
 
 # --- Flow: Modus-Auswahl ---
