@@ -14,163 +14,143 @@ BASE_DIR = Path(__file__).parent
 RULES_PATH = BASE_DIR / "data" / "custom_rules.json"
 LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
 
-# --- Default-Regeln (Original-Kategorien & Keywords) ---
-DEFAULT_RULES: dict[str, list[str]] = {
-    # ... Kategorien ...
+# --- Default-Regeln ---
+DEFAULT_RULES = {
+    # Alle Kategorien mit Keywords hier einfügen
 }
 
 # --- Authentifizierung ---
-creds = st.secrets.get("credentials", {})
-_USERS = {}
-if creds.get("username") and creds.get("password_hash"):
-    _USERS = {creds["username"]: creds["password_hash"]}
-else:
-    default_user = "admin2025"
-    default_hash = hashlib.sha256("data2025".encode()).hexdigest()
-    _USERS = {default_user: default_hash}
+def init_users():
+    creds = st.secrets.get("credentials", {})
+    if creds.get("username") and creds.get("password_hash"):
+        return {creds["username"]: creds["password_hash"]}
+    # Default
+    return {"admin2025": hashlib.sha256("data2025".encode()).hexdigest()}
+
+_USERS = init_users()
 
 def login(username: str, password: str) -> bool:
     return _USERS.get(username) == hashlib.sha256(password.encode()).hexdigest()
 
-# --- Regelverwaltung ---
-@st.cache_data(show_spinner=False)
-def load_rules() -> dict[str, list[str]]:
+# --- Regeln laden/speichern ---
+@st.cache_data
+def load_rules():
     if not RULES_PATH.exists():
-        RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
-        RULES_PATH.write_text(json.dumps(DEFAULT_RULES, indent=2, ensure_ascii=False), encoding="utf-8")
+        RULES_PATH.parent.mkdir(exist_ok=True)
+        RULES_PATH.write_text(json.dumps(DEFAULT_RULES, indent=2), encoding="utf-8")
     data = json.loads(RULES_PATH.read_text(encoding="utf-8"))
+    # Ergänze Defaults
     for cat, terms in DEFAULT_RULES.items():
         data.setdefault(cat, terms.copy())
     return data
 
-@st.cache_data(show_spinner=False)
-def save_rules(rules: dict[str, list[str]]) -> None:
-    RULES_PATH.write_text(json.dumps(rules, indent=2, ensure_ascii=False), encoding="utf-8")
+@st.cache_data
+def save_rules(rules):
+    RULES_PATH.write_text(json.dumps(rules, indent=2), encoding="utf-8")
 
-# --- Kategorisierer ---
-@st.cache_data(show_spinner=False)
-def build_pattern_map(rules: dict[str, list[str]]) -> dict[str, re.Pattern]:
-    patterns = {}
+# --- Kategorisierung ---
+@st.cache_data
+def build_patterns(rules):
+    pats = {}
     for cat, terms in rules.items():
         if terms:
-            esc = [re.escape(t) for t in set(terms)]
-            patterns[cat] = re.compile(r"\b(?:%s)\b" % "|".join(esc), re.IGNORECASE)
-    return patterns
+            esc = [re.escape(t) for t in terms]
+            pats[cat] = re.compile(r"\b(?:%s)\b" % "|".join(esc), re.IGNORECASE)
+    return pats
 
-@st.cache_data(show_spinner=False)
-def categorize(text: str, patterns: dict[str, re.Pattern]) -> str:
-    for cat, pat in patterns.items():
-        if pat.search(text):
-            return cat
+@st.cache_data
+def categorize(text, pats):
+    for cat, pat in pats.items():
+        if pat.search(text): return cat
     return "Sonstiges"
 
-# --- UI-Komponenten ---
+# --- UI ---
 def show_login():
-    st.markdown("<div style='text-align:center;'><h2>🔐 Anmeldung zur Feedback-Kategorisierung</h2></div>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align:center;font-size:2rem;'>👤 🔑</div>", unsafe_allow_html=True)
-    user = st.text_input("👤 Benutzername", key="user_input")
-    pwd = st.text_input("🔑 Passwort", type="password", key="pwd_input")
-    if st.button("🚀 Loslegen"):
+    st.markdown("<div style='text-align:center;'><h1>🔐 Login</h1></div>", unsafe_allow_html=True)
+    user = st.text_input("👤 User", key="user_input")
+    pwd = st.text_input("🔑 Pass", type="password", key="pwd_input")
+    if st.button("🚀 Login"):
         if login(user, pwd):
             st.session_state.authenticated = True
-            st.experimental_rerun()  # Rerun after setting authenticated
+            st.experimental_rerun()
         else:
-            st.error("❌ Falsche Anmeldedaten")
+            st.error("❌ Invalid credentials")
 
-# --- Hauptprogramm ---
+# --- Main ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if not st.session_state.authenticated:
     show_login()
     st.stop()
+
+rules = load_rules()
+patterns = build_patterns(rules)
+# Sidebar navigation
+choice = st.sidebar.radio("Modus", ["Analyse", "Regeln verwalten", "Regeln lernen"]）
+
+if choice == "Analyse":
+    ...
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if not st.session_state.authenticated:
-    if show_login():
-        st.experimental_rerun()
-    else:
-        st.stop()
+    show_login()
+    st.stop()
 
 rules = load_rules()
-patterns = build_pattern_map(rules)
-mode = sidebar_menu(["Analyse", "Regeln verwalten", "Regeln lernen"])
+patterns = build_patterns(rules)
+choice = st.sidebar.radio("Modus", ["Analyse","Regeln verwalten","Regeln lernen"])
 
-# --- Analyse ---
-if mode == "Analyse":
-    st.title("📊 Feedback-Kategorisierung")
-    uploaded = st.file_uploader("Excel hochladen (Spalte 'Feedback')", type=["xlsx"])
-    if uploaded:
-        df = pd.read_excel(uploaded)
-        if 'Feedback' in df.columns:
-            df['Kategorie'] = df['Feedback'].astype(str).apply(lambda x: categorize(x, patterns))
-            st.dataframe(df[['Feedback','Kategorie']])
-            counts = df['Kategorie'].value_counts(normalize=True).mul(100)
+if choice == "Analyse":
+    st.title("📊 Analyse")
+    up = st.file_uploader("Excel (Feedback)")
+    if up:
+        df = pd.read_excel(up)
+        if 'Feedback' in df:
+            df['Kat'] = df['Feedback'].astype(str).apply(lambda x: categorize(x, patterns))
+            st.dataframe(df)
+            cnt = df['Kat'].value_counts(normalize=True)*100
             fig, ax = plt.subplots()
-            counts.sort_values().plot.barh(ax=ax)
-            ax.set_xlabel("Anteil (%)")
+            cnt.sort_values().plot.barh(ax=ax)
             st.pyplot(fig)
-            st.download_button("Download CSV", df.to_csv(index=False), "feedback.csv", "text/csv")
-            towrite = io.BytesIO()
-            with pd.ExcelWriter(towrite, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name="Kategorien")
-                writer.save()
-            towrite.seek(0)
-            st.download_button(
-                "Download Excel", towrite,
-                "feedback.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        else:
-            st.error("Die Datei benötigt eine Spalte 'Feedback'.")
-
-# --- Regeln verwalten ---
-elif mode == "Regeln verwalten":
-    st.title("🔧 Regeln verwalten")
-    for cat in sorted(rules.keys()):
-        with st.expander(f"{cat} ({len(rules[cat])} Begriffe)"):
-            updated_terms = []
-            for i, term in enumerate(rules[cat]):
-                col1, col2 = st.columns([4, 1])
-                new_term = col1.text_input(label="", value=term, key=f"edit_{cat}_{i}")
-                if not col2.button("❌ Entfernen", key=f"del_{cat}_{i}"):
-                    updated_terms.append(new_term)
-            rules[cat] = updated_terms
-    st.markdown("---")
-    st.subheader("➕ Neues Schlüsselwort hinzufügen")
-    selected_category = st.selectbox("Kategorie auswählen", sorted(rules.keys()), key="new_sel_cat")
-    new_kw = st.text_input("Neues Schlüsselwort", key="new_keyword")
-    if st.button("Hinzufügen", key="add_keyword_btn") and new_kw:
-        rules[selected_category].append(new_kw)
+            st.download_button("CSV", df.to_csv(index=False), "f.csv","text/csv")
+            buf=io.BytesIO();pd.ExcelWriter(buf,engine='openpyxl').book;
+            with pd.ExcelWriter(buf,engine='openpyxl') as w: df.to_excel(w,index=False)
+            buf.seek(0)
+            st.download_button("Excel",buf,"f.xlsx","application/vnd.ms-excel")
+elif choice == "Regeln verwalten":
+    st.title("⚙️ Manage Rules")
+    for c in rules:
+        with st.expander(c):
+            terms=rules[c]
+            rem=[]
+            for i,t in enumerate(terms):
+                col1,col2=st.columns([4,1])
+                nt=col1.text_input("",value=t,key=f"r_{c}_{i}")
+                if col2.button("❌",key=f"d_{c}_{i}"): rem.append(i)
+                else: terms[i]=nt
+            rules[c]=[t for idx,t in enumerate(terms) if idx not in rem]
+    st.write("## Add New")
+    nc=st.text_input("New Cat")
+    nk=st.text_input("New Keyword")
+    if st.button("Add") and nk:
+        tgt=nc if nc else st.selectbox("Cat",list(rules))
+        rules.setdefault(tgt,[]).append(nk)
         save_rules(rules)
-        st.success(f"Keyword '{new_kw}' wurde der Kategorie '{selected_category}' hinzugefügt.")
         st.experimental_rerun()
+else:
+    st.title("🧠 Learn Rules")
+    up=st.file_uploader("Excel (Feedback)",key='l')
+    if up:
+        d=pd.read_excel(up)
+        if 'Feedback' in d:
+            un={}
+            for fb in d['Feedback'].astype(str):
+                if categorize(fb,patterns)=='Sonstiges':
+                    for w in re.findall(r"\w{4,}",fb):un[w]=un.get(w,0)+1
+            for w,cnt in sorted(un.items(),key=lambda x:-x[1])[:30]:
+                st.write(w,cnt)
+                choice=st.selectbox("Cat",["Ignorieren"]+list(rules),key=w)
+                if choice!='Ignorieren':
+                    rules.setdefault(choice,[]).append(w);save_rules(rules);st.experimental_rerun()
 
-# --- Regeln lernen ---
-elif mode == "Regeln lernen":
-    st.title("🧠 Regeln lernen")
-    uploaded_learn = st.file_uploader("Feedback Excel (Spalte 'Feedback')", type=["xlsx"], key="learn")
-    if uploaded_learn:
-        df_learn = pd.read_excel(uploaded_learn)
-        if 'Feedback' not in df_learn.columns:
-            st.error("Die Datei benötigt eine Spalte 'Feedback'.")
-        else:
-            unmatched = {}
-            for fb in df_learn['Feedback'].astype(str):
-                if categorize(fb.lower(), patterns) == "Sonstiges":
-                    for w in re.findall(r"\w{4,}", fb.lower()): unmatched[w] = unmatched.get(w,0)+1
-            suggestions = sorted(unmatched.items(), key=lambda x: x[1], reverse=True)[:30]
-            st.subheader("Vorschläge für neue Keywords aus 'Sonstiges' (Top 30)")
-            for word, cnt in suggestions:
-                cols = st.columns([4,2])
-                cols[0].write(f"{word} ({cnt}x)")
-                choice = cols[1].selectbox("Kategorie", ["Ignorieren"]+sorted(rules.keys()), key=word)
-                if choice != "Ignorieren":
-                    rules.setdefault(choice, []).append(word)
-                    with open(LOG_PATH,'a',encoding='utf-8') as logf:
-                        logf.write(f"{datetime.datetime.now().isoformat()};{word};{choice}\n")
-                    save_rules(rules)
-                    st.success(f"'{word}' wurde zu '{choice}' hinzugefügt.")
-                    st.experimental_rerun()
-
-# --- Persistenz am Ende ---
 save_rules(rules)
