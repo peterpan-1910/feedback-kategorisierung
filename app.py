@@ -13,11 +13,16 @@ BASE_DIR = Path(__file__).parent
 RULES_PATH = BASE_DIR / "data" / "custom_rules.json"
 LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
 
-# Authentifizierung
+# Authentifizierung mit Default-Credentials
+# Standard: admin2025 / data2025
 creds = st.secrets.get("credentials", {})
 _USERS = {}
 if creds.get("username") and creds.get("password_hash"):
     _USERS = {creds["username"]: creds["password_hash"]}
+else:
+    default_user = "admin2025"
+    default_hash = hashlib.sha256("data2025".encode()).hexdigest()
+    _USERS = {default_user: default_hash}
 
 def login(username: str, password: str) -> bool:
     return _USERS.get(username) == hashlib.sha256(password.encode()).hexdigest()
