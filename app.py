@@ -125,7 +125,7 @@ elif mode == "Regeln verwalten":
         rules[tgt].append(new_kw)
         save_rules(rules)
         st.success(f"'{new_kw}' wurde zu '{tgt}' hinzugefügt.")
-        st.experimental_rerun()
+        
 
 # --- Regeln lernen ---
 elif mode == "Regeln lernen":
@@ -151,7 +151,7 @@ elif mode == "Regeln lernen":
                         f.write(f"{datetime.datetime.now().isoformat()};{word};{choice}\n")
                     save_rules(rules)
                     st.success(f"'{word}' wurde zu '{choice}' hinzugefügt.")
-                    st.experimental_rerun()
+                    
 
 # --- Persistenz ---
 save_rules(rules)
