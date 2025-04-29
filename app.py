@@ -333,12 +333,12 @@ elif mode == "Regeln verwalten":
 # --- Regeln lernen ---
 elif mode == "Regeln lernen":
     st.title("🧠 Regeln lernen")
-    uploaded = st.file_uploader("Excel (Spalte 'Kommentar')", type=["xlsx"], key="learn")
+    uploaded = st.file_uploader("Excel (Spalte 'Feedback')", type=["xlsx"], key="learn")
     if uploaded:
         df = pd.read_excel(uploaded)
-        if 'Kommentar' in df.columns:
+        if 'Feedback' in df.columns:
             unmatched = {}
-            for fb in df['Kommentar'].astype(str):
+            for fb in df['Feedback'].astype(str):
                 if categorize_series(pd.Series([fb]), patterns).iloc[0] == "Sonstiges":
                     for w in re.findall(r"\w{4,}", fb.lower()):
                         unmatched[w] = unmatched.get(w, 0) + 1
