@@ -16,7 +16,8 @@ except ImportError:
     Github = None  # PyGithub nicht installiert
 
 # GitHub-Token und Repo-Name aus Streamlit Secrets
-GITHUB_TOKEN = st.secrets.get("GITHUB_TOKENREPO_NAME = st.secrets.get("REPO_NAME")  # Format: "user/repo"
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN")
+REPO_NAME    = st.secrets.get("REPO_NAME")  # Format: "user/repo"  # Format: "user/repo"
 
 def push_rules_to_github(rules: dict[str, list[str]]):
     """
@@ -167,7 +168,7 @@ DEFAULT_RULES = {
 # --- Nutzerverwaltung ---
 @st.cache_data(show_spinner=False)
 def init_users():
-    creds = st.secrets.get("credentials", {})
+    creds = st.secrets.get("credentials", {}
     if creds.get("username") and creds.get("password_hash"):
         return {creds["username"]: creds["password_hash"]}
     return {"admin2025": hashlib.sha256("data2025".encode()).hexdigest()}
