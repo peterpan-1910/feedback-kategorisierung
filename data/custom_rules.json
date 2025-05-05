@@ -103,7 +103,8 @@
     "app hängt fest",
     "schließt nach start",
     "app stürzt ständig ab",
-    "keine Internetverbindung"
+    "keine Internetverbindung",
+    "stürzt ab"
   ],
   "Fehler / Bugs": [
     "fehler",
