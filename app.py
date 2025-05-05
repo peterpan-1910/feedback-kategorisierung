@@ -137,11 +137,15 @@ DEFAULT_RULES = {
     ],
     "Tagesgeld": [
         "tagesgeld", "zins", "geldanlage", "sparzins", "zinskonto", "zinsen fehlen",
-        "tagesgeldkonto", "keine verzinsung", "tagegeldrate", "zinsbindung",
+        "tagesgeldkonto", "keine verzinsung", "tagesgeldrate", "zinsbindung",
         "verzinsung", "zinsänderung", "tagesgeldkonto nicht sichtbar",
         "tagesgeld nicht auswählbar", "zins niedrig", "zinsangebot",
         "anlagezins", "keine zinsinfo", "zins falsch angezeigt",
-        "tagesgeld fehler", "nicht verz<|... truncated ...|>
+        "tagesgeld fehler", "nicht verzinst", "zins fehlt",
+        "tagesgeldrate nicht geändert", "tagesgeldrate nicht angepasst",
+        "zinsbuchung fehlt", "zinsrate falsch", "zins wird nicht berechnet",
+        "tagesgeldkonto fehlt", "keine zinsanpassung", "tagesgeldoption fehlt"
+    ]
 }
 
 # --- Nutzerverwaltung ---
