@@ -9,6 +9,40 @@ import io
 from pathlib import Path
 from difflib import get_close_matches
 
+# --- GitHub-Integration ---
+try:
+    from github import Github
+except ImportError:
+    Github = None  # PyGithub nicht installiert
+
+# GitHub-Token und Repo-Name aus Streamlit Secrets
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN")
+REPO_NAME = st.secrets.get("REPO_NAME")  # Format: "user/repo"
+
+def push_rules_to_github(rules: dict[str, list[str]]):
+    """
+    Commitet und pusht custom_rules.json per GitHub API.
+    VORAUSSETZUNG: PyGithub installiert + GITHUB_TOKEN, REPO_NAME gesetzt.
+    """
+    if Github is None or not GITHUB_TOKEN or not REPO_NAME:
+        st.warning("GitHub-Commit übersprungen (PyGithub/Tokens nicht konfiguriert)")
+        return
+    try:
+        gh = Github(GITHUB_TOKEN)
+        repo = gh.get_repo(REPO_NAME)
+        content_path = "data/custom_rules.json"
+        contents = repo.get_contents(content_path)
+        new_content = json.dumps(rules, indent=2, ensure_ascii=False)
+        repo.update_file(
+            path=content_path,
+            message="[Streamlit] Update custom_rules.json",
+            content=new_content,
+            sha=contents.sha
+        )
+        st.info("custom_rules.json erfolgreich nach GitHub gepusht.")
+    except Exception as e:
+        st.error(f"GitHub-Push fehlgeschlagen: {e}")
+
 # --- Konfiguration ---
 BASE_DIR = Path(__file__).parent
 RULES_PATH = BASE_DIR / "data" / "custom_rules.json"
@@ -204,7 +238,11 @@ DEFAULT_RULES = {
 }
 
 # --- Nutzerverwaltung ---
-from github import Github
+try:
+    from github import Github
+except ImportError:
+    Github = None  # PyGithub nicht installiert
+
 
 # GitHub-Integration: Token in Streamlit-Secrets als GITHUB_TOKEN hinterlegen
 GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN")
