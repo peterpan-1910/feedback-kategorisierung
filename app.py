@@ -166,10 +166,12 @@ DEFAULT_RULES = {
 # --- Nutzerverwaltung ---
 @st.cache_data(show_spinner=False)
 def init_users():
-    creds = st.secrets.get("credentials", {}
+    creds = st.secrets.get("credentials", {})
     if creds.get("username") and creds.get("password_hash"):
         return {creds["username"]: creds["password_hash"]}
     return {"admin2025": hashlib.sha256("data2025".encode()).hexdigest()}
+
+_USERS = init_users(): hashlib.sha256("data2025".encode()).hexdigest()}
 
 _USERS = init_users()
 
