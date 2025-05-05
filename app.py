@@ -231,21 +231,35 @@ def login(user: str, pwd: str) -> bool:
     return _USERS.get(user) == hashlib.sha256(pwd.encode()).hexdigest()
 
 # --- GitHub Push ---
-def push_rules_to_github(rules: dict[str, list[str]]) -> None:
+def push_rules_to_github(rules: dict[str, list[str]]) -> tuple[bool, str]:
+    """
+    Commitet und pusht custom_rules.json per GitHub API.
+    VORAUSSETZUNG: PyGithub installiert + GITHUB_TOKEN, REPO_NAME gesetzt.
+    Gibt (True, message) bei Erfolg bzw. (False, error_message) zurück.
+    """
     if not Github or not GITHUB_TOKEN or not REPO_NAME:
-        return
+        return False, "GitHub-Commit übersprungen (fehlende Konfiguration)"
     gh = Github(GITHUB_TOKEN)
-    repo = gh.get_repo(REPO_NAME)
+    try:
+        repo = gh.get_repo(REPO_NAME)
+    except Exception as e:
+        return False, f"Zugriff auf Repo fehlgeschlagen: {e}"
     path = "data/custom_rules.json"
     content = json.dumps(rules, indent=2, ensure_ascii=False)
     try:
         existing = repo.get_contents(path)
         repo.update_file(path, "[Streamlit] Update rules", content, existing.sha)
+        return True, "custom_rules.json erfolgreich aktualisiert."
     except GithubException as e:
         if hasattr(e, 'status') and e.status == 404:
-            repo.create_file(path, "[Streamlit] Create rules", content)
-        else:
-            raise
+            try:
+                repo.create_file(path, "[Streamlit] Create rules", content)
+                return True, "custom_rules.json angelegt und gepusht."
+            except Exception as e2:
+                return False, f"Fehler beim Erstellen der Datei: {e2}"
+        return False, f"Fehler beim Update: {e}"
+    except Exception as e:
+        return False, f"Unbekannter Fehler: {e}"
 
 # --- Regelverwaltung ---
 @st.cache_data(show_spinner=False)
@@ -260,10 +274,18 @@ def load_rules() -> dict[str, list[str]]:
     return data
 
 def save_rules(rules: dict[str, list[str]]) -> None:
+    # Speichere lokal
     RULES_PATH.write_text(json.dumps(rules, indent=2, ensure_ascii=False), encoding="utf-8")
+    # Invalidate Caches
     load_rules.clear()
     build_patterns.clear()
-    push_rules_to_github(rules)
+    # Push zu GitHub mit visuellem Feedback
+    with st.spinner("Pushe Regeln zu GitHub..."):
+        success, message = push_rules_to_github(rules)
+    if success:
+        st.success(message)
+    else:
+        st.error(message)
 
 # --- Kategorisierung ---
 @st.cache_data(show_spinner=False)
