@@ -137,144 +137,14 @@ DEFAULT_RULES = {
     ],
     "Tagesgeld": [
         "tagesgeld", "zins", "geldanlage", "sparzins", "zinskonto", "zinsen fehlen",
-        "tagesgeldkonto", "keine verzinsung", "tagesgeldrate", "zinsbindung",
+        "tagesgeldkonto", "keine verzinsung", "tagegeldrate", "zinsbindung",
         "verzinsung", "zinsänderung", "tagesgeldkonto nicht sichtbar",
         "tagesgeld nicht auswählbar", "zins niedrig", "zinsangebot",
         "anlagezins", "keine zinsinfo", "zins falsch angezeigt",
-        "tagesgeld fehler", "nicht verzinst", "zins fehlt",
-        "tagesgeldrate nicht geändert", "tagesgeldrate nicht angepasst",
-        "zinsbuchung fehlt", "zinsrate falsch", "zins wird nicht berechnet",
-        "tagesgeldkonto fehlt", "keine zinsanpassung", "tagesgeldoption fehlt"
-    ],
-    "Werbung": [
-        "werbung", "angebot", "promo", "aktionscode", "zu viel werbung",
-        "nervige werbung", "nicht relevant", "spam", "werbeeinblendung",
-        "promotion", "werbeanzeige", "werbebanner", "werbebotschaft",
-        "unpassende werbung", "irrelevante werbung", "werbeaktion",
-        "werbung eingeblendet", "push werbung", "email werbung",
-        "werbung auf startseite", "nicht deaktivierbar", "werbung bei login",
-        "keine option zum abschalten", "störende werbung", "zu viele angebote",
-        "angebote nerven", "werbung in app", "werbung zu präsent",
-        "popup werbung", "unnötige angebote"
-    ],
-    "UI/UX": [
-        "veraltet", "nicht modern", "design alt", "nicht intuitiv",
-        "menüführung schlecht", "layout veraltet", "keine struktur",
-        "nicht übersichtlich", "nicht schön", "altbacken", "altmodisch",
-        "nicht benutzerfreundlich", "unübersichtliches layout",
-        "nicht ansprechend", "veraltetes interface", "kein modernes design",
-        "wirkt alt", "design nicht aktuell", "unmoderne oberfläche",
-        "technisch alt", "nicht responsive", "bedienung veraltet",
-        "style altbacken", "nutzung unkomfortabel", "umständliches layout",
-        "nicht ansehnlich", "elemente zu klein", "zu viel text", "keine icons",
-        "unpraktische darstellung"
-    ],
-    "unübersichtlich": [
-        "unübersichtlich", "nicht klar", "durcheinander", "nicht strukturiert",
-        "keine ordnung", "keine übersicht", "zu komplex", "schlecht aufgebaut",
-        "nicht nachvollziehbar", "layout chaotisch", "verwirrend",
-        "keine menüstruktur", "kein überblick", "unklare gliederung",
-        "unstrukturierte darstellung", "unübersichtliche seite",
-        "navigation schwierig", "kompliziertes menü", "kein roter faden",
-        "menüführung unklar", "fehlende kategorien", "kein filter",
-        "ohne sortierung", "unleserlich", "überladen", "optisch unklar",
-        "nicht gut erkennbar", "kategorie fehlt"
-    ],
-    "langsam": [
-        "langsam", "lädt lange", "dauert ewig", "träge", "reaktionszeit",
-        "verzögert", "ewiges laden", "warten", "verbindung langsam",
-        "nicht flüssig", "app ist träge", "verzögerte reagieren",
-        "ladeprobleme", "app ist langsam", "reagiert langsam",
-        "lange ladezeit", "performanceschwäche", "zu langsam",
-        "langsamer aufbau", "app lädt nicht sofort", "träge benutzung",
-        "startet langsam", "verarbeitung dauert", "menü öffnet langsam",
-        "daten laden ewig", "prozess dauert", "feedback dauert",
-        "anmeldung langsam", "reaktion zu spät", "verarbeitung verzögert"
-    ],
-    "Kundenservice": [
-        "support", "hotline", "rückruf", "keine antwort", "niemand erreichbar",
-        "service schlecht", "lange wartezeit", "kundendienst", "keine hilfe",
-        "service reagiert nicht", "keine unterstützung", "reagiert nicht",
-        "kontakt nicht möglich", "wartezeit", "keine rückmeldung",
-        "telefonisch nicht erreichbar", "keine lösung", "antwort dauert",
-        "kundenberatung fehlt", "keine antwort erhalten", "hotline nicht erreichbar",
-        "keine serviceleistung", "kundensupport schlecht", "kundenbetreuung mangelhaft",
-        "kundenservice reagiert nicht", "service schwer erreichbar", "service antwortet nicht",
-        "nicht geholfen", "unfreundlicher support", "hilft nicht weiter"
-    ],
-    "Kontaktmöglichkeiten": [
-        "ansprechpartner", "kontakt", "rückruf", "nicht erreichbar", "kein kontakt",
-        "keine kontaktdaten", "hilfe fehlt", "kontaktformular", "keine rückmeldung",
-        "support kontakt", "kein formular", "supportformular fehlt",
-        "kundendienst kontaktieren", "telefon fehlt", "email fehlt", "nur hotline",
-        "kontakt schwierig", "kontaktierung unklar", "kontaktoption fehlt",
-        "keine kontaktmöglichkeit", "nicht ansprechbar", "support schwer erreichbar",
-        "kein livechat", "keine supportmail", "anfrage nicht möglich",
-        "kein rückruf erhalten", "kontaktseite leer", "keine kontaktfunktion",
-        "kontaktmöglichkeit nicht ersichtlich", "anfrageformular fehlt"
-    ],
-    "Vertrauenswürdigkeit": [
-        "vertrauen", "abzocke", "nicht seriös", "zweifelhaft", "skepsis",
-        "nicht glaubwürdig", "unsicher", "nicht transparent", "betrugsverdacht",
-        "nicht vertrauenswürdig", "datensicherheit", "nicht nachvollziehbar",
-        "intransparente kosten", "unseriös", "abzocker", "misstrauen",
-        "unsicheres gefühl", "nicht überprüfbar", "unvollständig",
-        "zweifelhaftes angebot", "kein impressum", "keine transparenz",
-        "zweifelhaftes verhalten", "verdacht auf betrug", "unsichere kommunikation",
-        "fehlende datensicherheit", "keine aufklärung", "unzuverlässig",
-        "fragwürdig", "irreführend"
-    ],
-    "Gebühren": [
-        "gebühr", "zinsen", "bearbeitungsgebühr", "kosten", "preis", "zu teuer",
-        "gebühren nicht klar", "versteckte kosten", "nicht kostenlos",
-        "zusatzkosten", "gebühren unklar", "bankgebühren",
-        "gebührenerhöhung", "nicht transparent", "kosten zu hoch",
-        "gebührenänderung", "kontoführungsgebühr", "auszahlungsgebühr",
-        "transaktionsgebühr", "gebühr zu hoch", "zu hohe zinsen",
-        "gebühreninfo fehlt", "unverhältnismäßige gebühr", "gebühr nicht nachvollzierbar",
-        "entgelt", "gebührenbelastung", "gebühr nicht verständlich",
-        "servicegebühr", "provision", "kostenaufstellung fehlt"
-    ]
+        "tagesgeld fehler", "nicht verz<|... truncated ...|>
 }
 
 # --- Nutzerverwaltung ---
-try:
-    from github import Github
-except ImportError:
-    Github = None  # PyGithub nicht installiert
-
-
-# GitHub-Integration: Token in Streamlit-Secrets als GITHUB_TOKEN hinterlegen
-GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN")
-REPO_NAME = st.secrets.get("REPO_NAME")  # z.B. "user/repo"
-
-# Funktion zum Pushen der Regeln via GitHub-API
-def push_rules_to_github(rules: dict[str, list[str]]):
-    """
-    Commitet und pusht custom_rules.json in dein GitHub-Repo.
-    Vorher muss GITHUB_TOKEN (mit repo-Berechtigung) und REPO_NAME in st.secrets gesetzt sein.
-    """
-    if not GITHUB_TOKEN or not REPO_NAME:
-        st.warning("GitHub-Token oder Repo-Name nicht konfiguriert: push_rules_to_github übersprungen.")
-        return
-    try:
-        gh = Github(GITHUB_TOKEN)
-        repo = gh.get_repo(REPO_NAME)
-        path = "data/custom_rules.json"
-        # Hole aktuellen SHA
-        contents = repo.get_contents(path)
-        new_content = json.dumps(rules, indent=2, ensure_ascii=False)
-        repo.update_file(
-            path=path,
-            message="[Streamlit] Update custom_rules.json",
-            content=new_content,
-            sha=contents.sha
-        )
-        st.info("custom_rules.json erfolgreich nach GitHub gepusht.")
-    except Exception as e:
-        st.error(f"Fehler beim Push zu GitHub: {e}")
-
-
 @st.cache_data(show_spinner=False)
 def init_users():
     creds = st.secrets.get("credentials", {})
@@ -301,6 +171,8 @@ def load_rules():
 def save_rules(rules):
     RULES_PATH.write_text(json.dumps(rules, indent=2, ensure_ascii=False), encoding="utf-8")
     load_rules.clear()
+    build_patterns.clear()
+    push_rules_to_github(rules)
 
 # --- Kategorisierung ---
 @st.cache_data(show_spinner=False)
@@ -369,7 +241,6 @@ if mode == "Analyse":
 # --- Regeln verwalten ---
 elif mode == "Regeln verwalten":
     st.title("🔧 Regeln verwalten")
-    # Bestehende Kategorien & Keywords bearbeiten
     for cat in sorted(rules.keys()):
         with st.expander(f"{cat} ({len(rules[cat])} Begriffe)"):
             updated = []
@@ -381,22 +252,20 @@ elif mode == "Regeln verwalten":
                     updated.append(new_term)
             rules[cat] = updated
     st.markdown("---")
-    # Neue Kategorie erstellen
     st.subheader("➕ Neue Kategorie hinzufügen")
     new_cat_name = st.text_input("Name der neuen Kategorie", key="new_cat_name")
-    if st.button("Kategorie erstellen", key="create_cat") and new_cat_name:
+    if st.button("Kategorie erstellen") and new_cat_name:
         if new_cat_name not in rules:
             rules[new_cat_name] = []
             save_rules(rules)
-            st.success(f"Kategorie '{new_cat_name}' wurde erstellt.")
+            st.success(f"Kategorie '{new_cat_name}' erstellt.")
         else:
             st.error(f"Kategorie '{new_cat_name}' existiert bereits.")
     st.markdown("---")
-    # Neues Keyword hinzufügen
     st.subheader("➕ Neues Keyword hinzufügen")
     tgt = st.selectbox("Kategorie auswählen", sorted(rules.keys()), key="new_cat")
     new_kw = st.text_input("Neues Keyword", key="new_kw")
-    if st.button("Hinzufügen", key="add_kw") and new_kw:
+    if st.button("Hinzufügen") and new_kw:
         rules[tgt].append(new_kw)
         save_rules(rules)
         st.success(f"'{new_kw}' wurde zu '{tgt}' hinzugefügt.")
@@ -412,14 +281,12 @@ elif mode == "Regeln lernen":
             for fb in df['Feedback'].astype(str):
                 if categorize_series(pd.Series([fb]), patterns).iloc[0] == "Sonstiges":
                     tokens = re.findall(r"\w+", fb.lower())
-                    # Unigramme, Bigramme und Trigramme zählen
                     for n in (1, 2, 3):
                         for i in range(len(tokens) - n + 1):
                             phrase = " ".join(tokens[i:i+n])
                             if len(phrase) < 4:
                                 continue
                             unmatched[phrase] = unmatched.get(phrase, 0) + 1
-            # Top 30 Phrasen
             suggestions = sorted(unmatched.items(), key=lambda x: x[1], reverse=True)[:30]
             st.subheader("🔍 Vorschläge für Phrasen aus 'Sonstiges'")
             for idx, (phrase, cnt) in enumerate(suggestions):
@@ -436,7 +303,6 @@ elif mode == "Regeln lernen":
                         f.write(f"{datetime.datetime.now().isoformat()};{phrase};{choice}\n")
                     save_rules(rules)
                     st.success(f"'{phrase}' wurde zu '{choice}' hinzugefügt.")
-
 
 # --- Persistenz ---
 save_rules(rules)
