@@ -204,6 +204,39 @@ DEFAULT_RULES = {
 }
 
 # --- Nutzerverwaltung ---
+from github import Github
+
+# GitHub-Integration: Token in Streamlit-Secrets als GITHUB_TOKEN hinterlegen
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN")
+REPO_NAME = st.secrets.get("REPO_NAME")  # z.B. "user/repo"
+
+# Funktion zum Pushen der Regeln via GitHub-API
+def push_rules_to_github(rules: dict[str, list[str]]):
+    """
+    Commitet und pusht custom_rules.json in dein GitHub-Repo.
+    Vorher muss GITHUB_TOKEN (mit repo-Berechtigung) und REPO_NAME in st.secrets gesetzt sein.
+    """
+    if not GITHUB_TOKEN or not REPO_NAME:
+        st.warning("GitHub-Token oder Repo-Name nicht konfiguriert: push_rules_to_github übersprungen.")
+        return
+    try:
+        gh = Github(GITHUB_TOKEN)
+        repo = gh.get_repo(REPO_NAME)
+        path = "data/custom_rules.json"
+        # Hole aktuellen SHA
+        contents = repo.get_contents(path)
+        new_content = json.dumps(rules, indent=2, ensure_ascii=False)
+        repo.update_file(
+            path=path,
+            message="[Streamlit] Update custom_rules.json",
+            content=new_content,
+            sha=contents.sha
+        )
+        st.info("custom_rules.json erfolgreich nach GitHub gepusht.")
+    except Exception as e:
+        st.error(f"Fehler beim Push zu GitHub: {e}")
+
+
 @st.cache_data(show_spinner=False)
 def init_users():
     creds = st.secrets.get("credentials", {})
