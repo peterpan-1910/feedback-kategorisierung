@@ -11,60 +11,22 @@ from difflib import get_close_matches
 
 # --- GitHub-Integration ---
 try:
-    from github import Github
+    from github import Github, GithubException
 except ImportError:
-    Github = None  # PyGithub nicht installiert
+    Github = None
+    GithubException = Exception
 
-# GitHub-Token und Repo-Name aus Streamlit Secrets
+# GitHub-Token und Repo-Name aus Secrets
 GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN")
-REPO_NAME    = st.secrets.get("REPO_NAME")  # Format: "user/repo"  # Format: "user/repo"
+REPO_NAME    = st.secrets.get("REPO_NAME")  # Format: "user/repo"
 
-def push_rules_to_github(rules: dict[str, list[str]]):
-    """
-    Commitet und pusht custom_rules.json per GitHub API.
-    VORAUSSETZUNG: PyGithub installiert + GITHUB_TOKEN, REPO_NAME gesetzt.
-    """
-    if Github is None or not GITHUB_TOKEN or not REPO_NAME:
-        st.warning("GitHub-Commit übersprungen (PyGithub/Tokens nicht konfiguriert)")
-        return
-    try:
-        from github import GithubException
-    except ImportError:
-        GithubException = Exception
-    try:
-        gh = Github(GITHUB_TOKEN)
-        repo = gh.get_repo(REPO_NAME)
-        content_path = "data/custom_rules.json"
-        new_content = json.dumps(rules, indent=2, ensure_ascii=False)
-        try:
-            contents = repo.get_contents(content_path)
-            repo.update_file(
-                path=content_path,
-                message="[Streamlit] Update custom_rules.json",
-                content=new_content,
-                sha=contents.sha
-            )
-            st.info("custom_rules.json erfolgreich nach GitHub gepusht.")
-        except GithubException as e:
-            if hasattr(e, 'status') and e.status == 404:
-                repo.create_file(
-                    path=content_path,
-                    message="[Streamlit] Create custom_rules.json",
-                    content=new_content
-                )
-                st.info("custom_rules.json im Repo angelegt und gepusht.")
-            else:
-                raise
-    except Exception as e:
-        st.error(f"GitHub-Push fehlgeschlagen: {e}")
-
-# --- Konfiguration ---
-BASE_DIR = Path(__file__).parent
-RULES_PATH = BASE_DIR / "data" / "custom_rules.json"
-LOG_PATH = BASE_DIR / "data" / "rule_log.csv"
+# --- Pfade ---
+BASE_DIR    = Path(__file__).parent
+RULES_PATH  = BASE_DIR / "data" / "custom_rules.json"
+LOG_PATH    = BASE_DIR / "data" / "rule_log.csv"
 
 # --- Default-Regeln ---
-DEFAULT_RULES = {
+DEFAULT_RULES: dict[str, list[str]] = {
     "Login": [
         "einloggen", "login", "passwort", "anmeldung", "einloggen fehlgeschlagen", "nicht einloggen", "login funktioniert nicht",
         "authentifizierung fehler", "probleme beim anmelden", "nicht angemeldet", "zugriff", "fehlermeldung", "konto", "abmeldung",
@@ -160,36 +122,144 @@ DEFAULT_RULES = {
         "tagesgeldrate nicht geändert", "tagesgeldrate nicht angepasst",
         "zinsbuchung fehlt", "zinsrate falsch", "zins wird nicht berechnet",
         "tagesgeldkonto fehlt", "keine zinsanpassung", "tagesgeldoption fehlt"
+    ],
+    "Werbung": [
+        "werbung", "angebot", "promo", "aktionscode", "zu viel werbung",
+        "nerversige werbung", "nicht relevant", "spam", "werbeeinblendung",
+        "promotion", "werbeanzeige", "werbebanner", "werbebotschaft",
+        "unpassende werbung", "irrelevante werbung", "werbeaktion",
+        "werbung eingeblendet", "push werbung", "email werbung",
+        "werbung auf startseite", "nicht deaktivierbar", "werbung bei login",
+        "keine option zum abschalten", "störende werbung", "zu viele angebote",
+        "angebote nerven", "werbung in app", "werbung zu präsent",
+        "popup werbung", "unnötige angebote"
+    ],
+    "UI/UX": [
+        "veraltet", "nicht modern", "design alt", "nicht intuitiv",
+        "menüführung schlecht", "layout veraltet", "keine struktur",
+        "nicht übersichtlich", "nicht schön", "altbacken", "altmodisch",
+        "nicht benutzerfreundlich", "unübersichtliches layout",
+        "nicht ansprechend", "veraltetes interface", "kein modernes design",
+        "wirkt alt", "design nicht aktuell", "unmoderne oberfläche",
+        "technisch alt", "nicht responsive", "bedienung veraltet",
+        "style altbacken", "nutzung unkomfortabel", "umständliches layout",
+        "nicht ansehnlich", "elemente zu klein", "zu viel text", "keine icons",
+        "unpraktische darstellung"
+    ],
+    "unübersichtlich": [
+        "unübersichtlich", "nicht klar", "durcheinander", "nicht strukturiert",
+        "keine ordnung", "keine übersicht", "zu komplex", "schlecht aufgebaut",
+        "nicht nachvollziehbar", "layout chaotisch", "verwirrend",
+        "keine menüstruktur", "kein überblick", "unklare gliederung",
+        "unstrukturierte darstellung", "unübersichtliche seite",
+        "navigation schwierig", "kompliziertes menü", "kein roter faden",
+        "menüführung unklar", "fehlende kategorien", "kein filter",
+        "ohne sortierung", "unleserlich", "überladen", "optisch unklar",
+        "nicht gut erkennbar", "kategorie fehlt"
+    ],
+    "langsam": [
+        "langsam", "lädt lange", "dauert ewig", "träge", "reaktionszeit",
+        "verzögert", "ewiges laden", "warten", "verbindung langsam",
+        "nicht flüssig", "app ist träge", "verzögerte reagieren",
+        "ladeprobleme", "app ist langsam", "reagiert langsam",
+        "lange ladezeit", "performanceschwäche", "zu langsam",
+        "langsamer aufbau", "app lädt nicht sofort", "träge benutzung",
+        "startet langsam", "verarbeitung dauert", "menü öffnet langsam",
+        "daten laden ewig", "prozess dauert", "feedback dauert",
+        "anmeldung langsam", "reaktion zu spät", "verarbeitung verzögert"
+    ],
+    "Kundenservice": [
+        "support", "hotline", "rückruf", "keine antwort", "niemand erreichbar",
+        "service schlecht", "lange wartezeit", "kundendienst", "keine hilfe",
+        "service reagiert nicht", "keine unterstützung", "reagiert nicht",
+        "kontakt nicht möglich", "wartezeit", "keine rückmeldung",
+        "telefonisch nicht erreichbar", "keine lösung", "antwort dauert",
+        "kundenberatung fehlt", "keine antwort erhalten", "hotline nicht erreichbar",
+        "keine serviceleistung", "kundensupport schlecht", "kundenbetreuung mangelhaft",
+        "kundenservice reagiert nicht", "service schwer erreichbar", "service antwortet nicht",
+        "nicht geholfen", "unfreundlicher support", "hilft nicht weiter"
+    ],
+    "Kontaktmöglichkeiten": [
+        "ansprechpartner", "kontakt", "rückruf", "nicht erreichbar", "kein kontakt",
+        "keine kontaktdaten", "hilfe fehlt", "kontaktformular", "keine rückmeldung",
+        "support kontakt", "kein formular", "supportformular fehlt",
+        "kundendienst kontaktieren", "telefon fehlt", "email fehlt", "nur hotline",
+        "kontakt schwierig", "kontaktierung unklar", "kontaktoption fehlt",
+        "keine kontaktmöglichkeit", "nicht ansprechbar", "support schwer erreichbar",
+        "kein livechat", "keine supportmail", "anfrage nicht möglich",
+        "kein rückruf erhalten", "kontaktseite leer", "keine kontaktfunktion",
+        "kontaktmöglichkeit nicht ersichtlich", "anfrageformular fehlt"
+    ],
+    "Vertrauenswürdigkeit": [
+        "vertrauen", "abzocke", "nicht seriös", "zweifelhaft", "skepsis",
+        "nicht glaubwürdig", "unsicher", "nicht transparent", "betrugsverdacht",
+        "nicht vertrauenswürdig", "datensicherheit", "nicht nachvollziehbar",
+        "intransparente kosten", "unseriös", "abzocker", "misstrauen",
+        "unsicheres gefühl", "nicht überprüfbar", "unvollständig",
+        "zweifelhaftes angebot", "kein impressum", "keine transparenz",
+        "zweifelhaftes verhalten", "verdacht auf betrug", "unsichere kommunikation",
+        "fehlende datensicherheit", "keine aufklärung", "unzuverlässig",
+        "fragwürdig", "irreführend"
+    ],
+    "Gebühren": [
+        "gebühr", "zinsen", "bearbeitungsgebühr", "kosten", "preis", "zu teuer",
+        "gebühren nicht klar", "versteckte kosten", "nicht kostenlos",
+        "zusatzkosten", "gebühren unklar", "bankgebühren",
+        "gebührenerhöhung", "nicht transparent", "kosten zu hoch",
+        "gebührenänderung", "kontoführungsgebühr", "auszahlungsgebühr",
+        "transaktionsgebühr", "gebühr zu hoch", "zu hohe zinsen",
+        "gebühreninfo fehlt", "unverhältnismäßige gebühr", "gebühr nicht nachvollziehbar",
+        "entgelt", "gebührenbelastung", "gebühr nicht verständlich",
+        "servicegebühr", "provision", "kostenaufstellung fehlt"
     ]
 }
 
 # --- Nutzerverwaltung ---
 @st.cache_data(show_spinner=False)
-def init_users():
+def init_users() -> dict[str, str]:
     creds = st.secrets.get("credentials", {})
-    if creds.get("username") and creds.get("password_hash"):
-        return {creds["username"]: creds["password_hash"]}
+    username = creds.get("username")
+    pw_hash  = creds.get("password_hash")
+    if username and pw_hash:
+        return {username: pw_hash}
+    # Default
     return {"admin2025": hashlib.sha256("data2025".encode()).hexdigest()}
-
-_USERS = init_users(): hashlib.sha256("data2025".encode()).hexdigest()}
 
 _USERS = init_users()
 
 def login(user: str, pwd: str) -> bool:
     return _USERS.get(user) == hashlib.sha256(pwd.encode()).hexdigest()
 
-# --- Regeln laden/speichern ---
+# --- GitHub Push ---
+def push_rules_to_github(rules: dict[str, list[str]]) -> None:
+    if not Github or not GITHUB_TOKEN or not REPO_NAME:
+        return
+    gh = Github(GITHUB_TOKEN)
+    repo = gh.get_repo(REPO_NAME)
+    path = "data/custom_rules.json"
+    content = json.dumps(rules, indent=2, ensure_ascii=False)
+    try:
+        existing = repo.get_contents(path)
+        repo.update_file(path, "[Streamlit] Update rules", content, existing.sha)
+    except GithubException as e:
+        if hasattr(e, 'status') and e.status == 404:
+            repo.create_file(path, "[Streamlit] Create rules", content)
+        else:
+            raise
+
+# --- Regelverwaltung ---
 @st.cache_data(show_spinner=False)
-def load_rules():
+def load_rules() -> dict[str, list[str]]:
     if not RULES_PATH.exists():
         RULES_PATH.parent.mkdir(parents=True, exist_ok=True)
         RULES_PATH.write_text(json.dumps(DEFAULT_RULES, indent=2, ensure_ascii=False), encoding="utf-8")
     data = json.loads(RULES_PATH.read_text(encoding="utf-8"))
+    # Ergänze fehlende Defaults
     for cat, terms in DEFAULT_RULES.items():
         data.setdefault(cat, terms.copy())
     return data
 
-def save_rules(rules):
+def save_rules(rules: dict[str, list[str]]) -> None:
     RULES_PATH.write_text(json.dumps(rules, indent=2, ensure_ascii=False), encoding="utf-8")
     load_rules.clear()
     build_patterns.clear()
@@ -197,28 +267,28 @@ def save_rules(rules):
 
 # --- Kategorisierung ---
 @st.cache_data(show_spinner=False)
-def build_patterns(rules):
-    pats = {}
+def build_patterns(rules: dict[str, list[str]]) -> dict[str, re.Pattern]:
+    patterns: dict[str, re.Pattern] = {}
     for cat, terms in rules.items():
         if terms:
-            esc = [re.escape(t) for t in terms]
-            pats[cat] = re.compile(r"\b(?:%s)\b" % "|".join(esc), re.IGNORECASE)
-    return pats
+            escaped = [re.escape(t) for t in terms]
+            patterns[cat] = re.compile(r"\b(?:%s)\b" % "|".join(escaped), re.IGNORECASE)
+    return patterns
 
 @st.cache_data(show_spinner=False)
-def categorize_series(feedback_series, patterns):
-    df = pd.DataFrame({ 'Feedback': feedback_series })
+def categorize_series(feedback: pd.Series, patterns: dict[str, re.Pattern]) -> pd.Series:
+    df = pd.DataFrame({'Feedback': feedback})
     df['Kategorie'] = 'Sonstiges'
     for cat, pat in patterns.items():
-        mask = df['Feedback'].str.contains(pat)
+        mask = df['Feedback'].str.contains(pat, regex=True)
         df.loc[mask & (df['Kategorie'] == 'Sonstiges'), 'Kategorie'] = cat
     return df['Kategorie']
 
 # --- UI: Login ---
-def show_login():
+def show_login() -> None:
     st.markdown("<h1 style='text-align:center;'>🔐 Login</h1>", unsafe_allow_html=True)
     user = st.text_input("👤 Benutzername", key="user_input")
-    pwd = st.text_input("🔑 Passwort", type="password", key="pwd_input")
+    pwd  = st.text_input("🔑 Passwort", type="password", key="pwd_input")
     if st.button("🚀 Anmelden"):
         if login(user, pwd):
             st.session_state.authenticated = True
@@ -226,15 +296,15 @@ def show_login():
             st.error("❌ Ungültige Anmeldedaten")
 
 # --- Main ---
-if "authenticated" not in st.session_state:
+if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 if not st.session_state.authenticated:
     show_login()
     st.stop()
 
-rules = load_rules()
+rules    = load_rules()
 patterns = build_patterns(rules)
-mode = st.sidebar.radio("Modus", ["Analyse", "Regeln verwalten", "Regeln lernen"])
+mode     = st.sidebar.radio("Modus", ["Analyse", "Regeln verwalten", "Regeln lernen"])
 
 # --- Analyse ---
 if mode == "Analyse":
@@ -244,18 +314,18 @@ if mode == "Analyse":
         df = pd.read_excel(uploaded)
         if 'Feedback' in df.columns:
             df['Kategorie'] = categorize_series(df['Feedback'].astype(str), patterns)
-            st.dataframe(df[['Feedback', 'Kategorie']])
+            st.dataframe(df[['Feedback','Kategorie']])
             counts = df['Kategorie'].value_counts(normalize=True).mul(100)
             fig, ax = plt.subplots()
             counts.sort_values().plot.barh(ax=ax)
             ax.set_xlabel("Anteil (%)")
             st.pyplot(fig)
-            st.download_button("Download CSV", df.to_csv(index=False), "feedback.csv", "text/csv")
+            st.download_button("Download CSV", df.to_csv(index=False), "feedback.csv")
             buf = io.BytesIO()
             with pd.ExcelWriter(buf, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name="Kategorien")
             buf.seek(0)
-            st.download_button("Download Excel", buf, "feedback.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            st.download_button("Download Excel", buf, "feedback.xlsx")
         else:
             st.error("Spalte 'Feedback' nicht gefunden.")
 
@@ -264,66 +334,60 @@ elif mode == "Regeln verwalten":
     st.title("🔧 Regeln verwalten")
     for cat in sorted(rules.keys()):
         with st.expander(f"{cat} ({len(rules[cat])} Begriffe)"):
-            updated = []
+            updated: list[str] = []
             for idx, term in enumerate(rules[cat]):
-                c1, c2 = st.columns([4, 1])
-                new_term = c1.text_input("", value=term, key=f"edit_{cat}_{idx}")
-                remove = c2.checkbox("❌", key=f"rem_{cat}_{idx}")
-                if not remove:
-                    updated.append(new_term)
+                c1, c2 = st.columns([4,1])
+                new = c1.text_input("", value=term, key=f"edit_{cat}_{idx}")
+                rem = c2.checkbox("❌", key=f"rem_{cat}_{idx}")
+                if not rem:
+                    updated.append(new)
             rules[cat] = updated
     st.markdown("---")
-    st.subheader("➕ Neue Kategorie hinzufügen")
-    new_cat_name = st.text_input("Name der neuen Kategorie", key="new_cat_name")
-    if st.button("Kategorie erstellen") and new_cat_name:
-        if new_cat_name not in rules:
-            rules[new_cat_name] = []
+    new_cat = st.text_input("➕ Neue Kategorie", key="new_cat")
+    if st.button("Erstellen") and new_cat:
+        if new_cat not in rules:
+            rules[new_cat] = []
             save_rules(rules)
-            st.success(f"Kategorie '{new_cat_name}' erstellt.")
+            st.success(f"{new_cat} erstellt.")
         else:
-            st.error(f"Kategorie '{new_cat_name}' existiert bereits.")
+            st.error("Kategorie existiert bereits.")
     st.markdown("---")
-    st.subheader("➕ Neues Keyword hinzufügen")
-    tgt = st.selectbox("Kategorie auswählen", sorted(rules.keys()), key="new_cat")
+    tgt = st.selectbox("Kategorie für neues Keyword", sorted(rules.keys()), key="kw_cat")
     new_kw = st.text_input("Neues Keyword", key="new_kw")
     if st.button("Hinzufügen") and new_kw:
         rules[tgt].append(new_kw)
         save_rules(rules)
-        st.success(f"'{new_kw}' wurde zu '{tgt}' hinzugefügt.")
+        st.success(f"{new_kw} zu {tgt} hinzugefügt.")
 
 # --- Regeln lernen ---
 elif mode == "Regeln lernen":
     st.title("🧠 Regeln lernen")
     uploaded = st.file_uploader("Excel (Spalte 'Feedback')", type=["xlsx"], key="learn")
     if uploaded:
-        df = pd.read_excel(uploaded)
-        if 'Feedback' in df.columns:
+        df_learn = pd.read_excel(uploaded)
+        if 'Feedback' in df_learn.columns:
             unmatched: dict[str, int] = {}
-            for fb in df['Feedback'].astype(str):
-                if categorize_series(pd.Series([fb]), patterns).iloc[0] == "Sonstiges":
+            for fb in df_learn['Feedback'].astype(str):
+                if categorize_series(pd.Series([fb]), patterns).iloc[0] == 'Sonstiges':
                     tokens = re.findall(r"\w+", fb.lower())
-                    for n in (1, 2, 3):
-                        for i in range(len(tokens) - n + 1):
+                    for n in (1,2,3):
+                        for i in range(len(tokens)-n+1):
                             phrase = " ".join(tokens[i:i+n])
                             if len(phrase) < 4:
                                 continue
                             unmatched[phrase] = unmatched.get(phrase, 0) + 1
             suggestions = sorted(unmatched.items(), key=lambda x: x[1], reverse=True)[:30]
-            st.subheader("🔍 Vorschläge für Phrasen aus 'Sonstiges'")
+            st.subheader("🔍 Vorschläge aus 'Sonstiges'")
             for idx, (phrase, cnt) in enumerate(suggestions):
-                cols = st.columns([4, 2])
-                cols[0].write(f"{phrase} ({cnt}×)")
-                choice = cols[1].selectbox(
-                    "Kategorie",
-                    ["Ignorieren"] + sorted(rules.keys()),
-                    key=f"learn_phrase_{idx}"
-                )
+                c1, c2 = st.columns([4,2])
+                c1.write(f"{phrase} ({cnt}×)")
+                choice = c2.selectbox("Kategorie", ["Ignorieren"]+sorted(rules.keys()), key=f"learn_{idx}")
                 if choice != "Ignorieren":
                     rules.setdefault(choice, []).append(phrase)
                     with open(LOG_PATH, 'a', encoding='utf-8') as f:
                         f.write(f"{datetime.datetime.now().isoformat()};{phrase};{choice}\n")
                     save_rules(rules)
-                    st.success(f"'{phrase}' wurde zu '{choice}' hinzugefügt.")
+                    st.success(f"{phrase} zu {choice} hinzugefügt.")
 
-# --- Persistenz ---
+# --- Persistenz letzte Aktion ---
 save_rules(rules)
