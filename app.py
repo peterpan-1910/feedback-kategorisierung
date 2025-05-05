@@ -47,7 +47,6 @@ def push_rules_to_github(rules: dict[str, list[str]]):
             st.info("custom_rules.json erfolgreich nach GitHub gepusht.")
         except GithubException as e:
             if hasattr(e, 'status') and e.status == 404:
-                # Datei existiert nicht, erstelle sie
                 repo.create_file(
                     path=content_path,
                     message="[Streamlit] Create custom_rules.json",
@@ -58,7 +57,6 @@ def push_rules_to_github(rules: dict[str, list[str]]):
                 raise
     except Exception as e:
         st.error(f"GitHub-Push fehlgeschlagen: {e}")
-")
 
 # --- Konfiguration ---
 BASE_DIR = Path(__file__).parent
