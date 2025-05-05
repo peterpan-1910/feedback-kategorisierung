@@ -28,20 +28,37 @@ def push_rules_to_github(rules: dict[str, list[str]]):
         st.warning("GitHub-Commit übersprungen (PyGithub/Tokens nicht konfiguriert)")
         return
     try:
+        from github import GithubException
+    except ImportError:
+        GithubException = Exception
+    try:
         gh = Github(GITHUB_TOKEN)
         repo = gh.get_repo(REPO_NAME)
         content_path = "data/custom_rules.json"
-        contents = repo.get_contents(content_path)
         new_content = json.dumps(rules, indent=2, ensure_ascii=False)
-        repo.update_file(
-            path=content_path,
-            message="[Streamlit] Update custom_rules.json",
-            content=new_content,
-            sha=contents.sha
-        )
-        st.info("custom_rules.json erfolgreich nach GitHub gepusht.")
+        try:
+            contents = repo.get_contents(content_path)
+            repo.update_file(
+                path=content_path,
+                message="[Streamlit] Update custom_rules.json",
+                content=new_content,
+                sha=contents.sha
+            )
+            st.info("custom_rules.json erfolgreich nach GitHub gepusht.")
+        except GithubException as e:
+            if hasattr(e, 'status') and e.status == 404:
+                # Datei existiert nicht, erstelle sie
+                repo.create_file(
+                    path=content_path,
+                    message="[Streamlit] Create custom_rules.json",
+                    content=new_content
+                )
+                st.info("custom_rules.json im Repo angelegt und gepusht.")
+            else:
+                raise
     except Exception as e:
         st.error(f"GitHub-Push fehlgeschlagen: {e}")
+")
 
 # --- Konfiguration ---
 BASE_DIR = Path(__file__).parent
