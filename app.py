@@ -408,23 +408,35 @@ elif mode == "Regeln lernen":
     if uploaded:
         df = pd.read_excel(uploaded)
         if 'Feedback' in df.columns:
-            unmatched = {}
+            unmatched: dict[str, int] = {}
             for fb in df['Feedback'].astype(str):
                 if categorize_series(pd.Series([fb]), patterns).iloc[0] == "Sonstiges":
-                    for w in re.findall(r"\w{4,}", fb.lower()):
-                        unmatched[w] = unmatched.get(w, 0) + 1
+                    tokens = re.findall(r"\w+", fb.lower())
+                    # Unigramme, Bigramme und Trigramme zählen
+                    for n in (1, 2, 3):
+                        for i in range(len(tokens) - n + 1):
+                            phrase = " ".join(tokens[i:i+n])
+                            if len(phrase) < 4:
+                                continue
+                            unmatched[phrase] = unmatched.get(phrase, 0) + 1
+            # Top 30 Phrasen
             suggestions = sorted(unmatched.items(), key=lambda x: x[1], reverse=True)[:30]
-            st.subheader("Vorschläge für neue Keywords aus 'Sonstiges'")
-            for idx, (word, cnt) in enumerate(suggestions):
+            st.subheader("🔍 Vorschläge für Phrasen aus 'Sonstiges'")
+            for idx, (phrase, cnt) in enumerate(suggestions):
                 cols = st.columns([4, 2])
-                cols[0].write(f"{word} ({cnt}x)")
-                choice = cols[1].selectbox("Kategorie", ["Ignorieren"] + sorted(rules.keys()), key=f"learn_{idx}")
+                cols[0].write(f"{phrase} ({cnt}×)")
+                choice = cols[1].selectbox(
+                    "Kategorie",
+                    ["Ignorieren"] + sorted(rules.keys()),
+                    key=f"learn_phrase_{idx}"
+                )
                 if choice != "Ignorieren":
-                    rules.setdefault(choice, []).append(word)
+                    rules.setdefault(choice, []).append(phrase)
                     with open(LOG_PATH, 'a', encoding='utf-8') as f:
-                        f.write(f"{datetime.datetime.now().isoformat()};{word};{choice}\n")
+                        f.write(f"{datetime.datetime.now().isoformat()};{phrase};{choice}\n")
                     save_rules(rules)
-                    st.success(f"'{word}' wurde zu '{choice}' hinzugefügt.")
+                    st.success(f"'{phrase}' wurde zu '{choice}' hinzugefügt.")
+
 
 # --- Persistenz ---
 save_rules(rules)
