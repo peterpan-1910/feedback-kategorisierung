@@ -38,7 +38,8 @@
     "sitzung beendet",
     "session läuft ab",
     "fehlversuch login",
-    "loginblockade"
+    "loginblockade",
+    "Fingerabdruck"
   ],
   "TAN Probleme": [
     "tan",
