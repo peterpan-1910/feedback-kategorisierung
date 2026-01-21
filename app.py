@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,7 +8,7 @@ import hashlib
 import re
 import io
 from pathlib import Path
-from difflib import get_close_matches
+from difflib import get_close_matches  # aktuell ungenutzt, kann ggf. entfernt werden
 
 # --- GitHub-Integration ---
 try:
@@ -214,7 +215,6 @@ DEFAULT_RULES: dict[str, list[str]] = {
     ]
 }
 
-
 # --- Nutzerverwaltung ---
 @st.cache_data(show_spinner=False)
 def init_users() -> dict[str, str]:
@@ -223,9 +223,15 @@ def init_users() -> dict[str, str]:
     pw_hash  = creds.get("password_hash")
     if username and pw_hash:
         return {username: pw_hash}
-    # Default
+    # Default: admin2026 / admin2026
     return {"admin2026": hashlib.sha256("admin2026".encode()).hexdigest()}
 
+_USERS = init_users()
+
+def login(user: str, pwd: str) -> bool:
+    """Vergleicht eingegebenes Passwort (SHA256) mit dem gespeicherten Hash."""
+    target_hash = _USERS.get(user)
+    return bool(target_hash) and (target_hash == hashlib.sha256(pwd.encode()).hexdigest())
 
 # --- GitHub Push ---
 def push_rules_to_github(rules: dict[str, list[str]]) -> tuple[bool, str]:
@@ -282,24 +288,35 @@ def save_rules(rules: dict[str, list[str]]) -> None:
     if success:
         st.success(message)
     else:
-        st.error(message)
+        # Nicht als Fehler markieren, wenn Konfig fehlt – sonst nervt es bei jedem Rerun.
+        if "übersprungen" in message:
+            st.info(message)
+        else:
+            st.error(message)
 
 # --- Kategorisierung ---
-@st.cache_data(show_spinner=False)
+@st.cache_resource(show_spinner=False)
 def build_patterns(rules: dict[str, list[str]]) -> dict[str, re.Pattern]:
+    """
+    Kompiliert Regex-Patterns. cache_resource verwendet In-Memory-Cache,
+    damit re.Pattern (nicht-serialisierbar) problemlos gecacht werden kann.
+    """
     patterns: dict[str, re.Pattern] = {}
     for cat, terms in rules.items():
         if terms:
             escaped = [re.escape(t) for t in terms]
-            patterns[cat] = re.compile(r"\b(?:%s)\b" % "|".join(escaped), re.IGNORECASE)
+            try:
+                patterns[cat] = re.compile(r"\b(?:%s)\b" % "|".join(escaped), re.IGNORECASE)
+            except re.error:
+                # Fallback: wenn etwas schiefgeht, nimm einfache contains-Variante
+                patterns[cat] = re.compile("|".join(escaped), re.IGNORECASE)
     return patterns
 
-@st.cache_data(show_spinner=False)
 def categorize_series(feedback: pd.Series, patterns: dict[str, re.Pattern]) -> pd.Series:
     df = pd.DataFrame({'Feedback': feedback})
     df['Kategorie'] = 'Sonstiges'
     for cat, pat in patterns.items():
-        mask = df['Feedback'].str.contains(pat, regex=True)
+        mask = df['Feedback'].str.contains(pat, regex=True, na=False)
         df.loc[mask & (df['Kategorie'] == 'Sonstiges'), 'Kategorie'] = cat
     return df['Kategorie']
 
@@ -311,6 +328,8 @@ def show_login() -> None:
     if st.button("🚀 Anmelden"):
         if login(user, pwd):
             st.session_state.authenticated = True
+            st.success("✅ Erfolgreich angemeldet")
+            st.rerun()
         else:
             st.error("❌ Ungültige Anmeldedaten")
 
@@ -330,83 +349,126 @@ if mode == "Analyse":
     st.title("📊 Feedback-Kategorisierung")
     uploaded = st.file_uploader("Excel (Spalte 'Feedback')", type=["xlsx"])
     if uploaded:
-        df = pd.read_excel(uploaded)
+        try:
+            df = pd.read_excel(uploaded)  # setzt openpyxl voraus
+        except Exception as e:
+            st.error(f"Fehler beim Einlesen der Excel-Datei: {e}")
+            st.stop()
+
         if 'Feedback' in df.columns:
             df['Kategorie'] = categorize_series(df['Feedback'].astype(str), patterns)
-            st.dataframe(df[['Feedback','Kategorie']])
-            counts = df['Kategorie'].value_counts(normalize=True).mul(100)
+            st.dataframe(df[['Feedback', 'Kategorie']], use_container_width=True)
+
+            counts = df['Kategorie'].value_counts(normalize=True).mul(100).sort_values()
             fig, ax = plt.subplots()
-            counts.sort_values().plot.barh(ax=ax)
+            counts.plot.barh(ax=ax)
             ax.set_xlabel("Anteil (%)")
-            st.pyplot(fig)
+            ax.set_ylabel("Kategorie")
+            ax.set_title("Verteilung der Kategorien")
+            st.pyplot(fig, clear_figure=True)
+
             st.download_button("Download CSV", df.to_csv(index=False), "feedback.csv")
             buf = io.BytesIO()
-            with pd.ExcelWriter(buf, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name="Kategorien")
-            buf.seek(0)
-            st.download_button("Download Excel", buf, "feedback.xlsx")
+            try:
+                with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+                    df.to_excel(writer, index=False, sheet_name="Kategorien")
+                buf.seek(0)
+                st.download_button("Download Excel", buf, "feedback.xlsx")
+            except Exception as e:
+                st.warning(f"Excel-Export nicht möglich: {e}")
         else:
             st.error("Spalte 'Feedback' nicht gefunden.")
 
 # --- Regeln verwalten ---
 elif mode == "Regeln verwalten":
     st.title("🔧 Regeln verwalten")
+    changed = False
+
     for cat in sorted(rules.keys()):
-        with st.expander(f"{cat} ({len(rules[cat])} Begriffe)"):
+        with st.expander(f"{cat} ({len(rules[cat])} Begriffe)", expanded=False):
             updated: list[str] = []
             for idx, term in enumerate(rules[cat]):
-                c1, c2 = st.columns([4,1])
+                c1, c2 = st.columns([4, 1])
                 new = c1.text_input("", value=term, key=f"edit_{cat}_{idx}")
                 rem = c2.checkbox("❌", key=f"rem_{cat}_{idx}")
+                if rem or new != term:
+                    changed = True
                 if not rem:
                     updated.append(new)
-            rules[cat] = updated
+            if updated != rules[cat]:
+                rules[cat] = updated
+
     st.markdown("---")
     new_cat = st.text_input("➕ Neue Kategorie", key="new_cat")
-    if st.button("Erstellen") and new_cat:
-        if new_cat not in rules:
-            rules[new_cat] = []
-            save_rules(rules)
-            st.success(f"{new_cat} erstellt.")
+    if st.button("Erstellen"):
+        if new_cat:
+            if new_cat not in rules:
+                rules[new_cat] = []
+                changed = True
+                st.success(f"{new_cat} erstellt.")
+            else:
+                st.error("Kategorie existiert bereits.")
         else:
-            st.error("Kategorie existiert bereits.")
+            st.warning("Bitte Kategorienamen eingeben.")
+
     st.markdown("---")
     tgt = st.selectbox("Kategorie für neues Keyword", sorted(rules.keys()), key="kw_cat")
     new_kw = st.text_input("Neues Keyword", key="new_kw")
-    if st.button("Hinzufügen") and new_kw:
-        rules[tgt].append(new_kw)
+    if st.button("Hinzufügen"):
+        if new_kw:
+            rules[tgt].append(new_kw)
+            changed = True
+            st.success(f"'{new_kw}' zu '{tgt}' hinzugefügt.")
+        else:
+            st.warning("Bitte ein Keyword eingeben.")
+
+    st.markdown("---")
+    if st.button("💾 Änderungen speichern", type="primary"):
         save_rules(rules)
-        st.success(f"{new_kw} zu {tgt} hinzugefügt.")
+        changed = False
+
+    if changed:
+        st.info("Es gibt ungespeicherte Änderungen.")
 
 # --- Regeln lernen ---
 elif mode == "Regeln lernen":
     st.title("🧠 Regeln lernen")
     uploaded = st.file_uploader("Excel (Spalte 'Feedback')", type=["xlsx"], key="learn")
     if uploaded:
-        df_learn = pd.read_excel(uploaded)
+        try:
+            df_learn = pd.read_excel(uploaded)
+        except Exception as e:
+            st.error(f"Fehler beim Einlesen der Excel-Datei: {e}")
+            st.stop()
+
         if 'Feedback' in df_learn.columns:
             unmatched: dict[str, int] = {}
             for fb in df_learn['Feedback'].astype(str):
                 if categorize_series(pd.Series([fb]), patterns).iloc[0] == 'Sonstiges':
                     tokens = re.findall(r"\w+", fb.lower())
-                    for n in (1,2,3):
-                        for i in range(len(tokens)-n+1):
+                    for n in (1, 2, 3):
+                        for i in range(len(tokens) - n + 1):
                             phrase = " ".join(tokens[i:i+n])
                             if len(phrase) < 4:
                                 continue
                             unmatched[phrase] = unmatched.get(phrase, 0) + 1
+
             suggestions = sorted(unmatched.items(), key=lambda x: x[1], reverse=True)[:30]
             st.subheader("🔍 Vorschläge aus 'Sonstiges'")
+            if not suggestions:
+                st.info("Keine Vorschläge gefunden. Lade mehr/anderes Feedback hoch.")
             for idx, (phrase, cnt) in enumerate(suggestions):
-                c1, c2 = st.columns([4,2])
+                c1, c2 = st.columns([4, 2])
                 c1.write(f"{phrase} ({cnt}×)")
-                choice = c2.selectbox("Kategorie", ["Ignorieren"]+sorted(rules.keys()), key=f"learn_{idx}")
+                choice = c2.selectbox("Kategorie", ["Ignorieren"] + sorted(rules.keys()), key=f"learn_{idx}")
                 if choice != "Ignorieren":
                     rules.setdefault(choice, []).append(phrase)
+                    # Stelle sicher, dass Ordner existiert
+                    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
                     with open(LOG_PATH, 'a', encoding='utf-8') as f:
                         f.write(f"{datetime.datetime.now().isoformat()};{phrase};{choice}\n")
                     save_rules(rules)
-                    st.success(f"{phrase} zu {choice} hinzugefügt.")
-
-# --- Persistenz letzte Aktion ---
-save_rules(rules)
+                    st.success(f"'{phrase}' zu '{choice}' hinzugefügt.")
+        else:
+            st.error("Spalte 'Feedback' nicht gefunden.")
+``
