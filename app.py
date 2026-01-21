@@ -8,7 +8,6 @@ import hashlib
 import re
 import io
 from pathlib import Path
-from difflib import get_close_matches  # aktuell ungenutzt, kann ggf. entfernt werden
 
 # --- GitHub-Integration ---
 try:
@@ -226,6 +225,7 @@ def init_users() -> dict[str, str]:
     # Default: admin2026 / admin2026
     return {"admin2026": hashlib.sha256("admin2026".encode()).hexdigest()}
 
+# WICHTIG: Globale User-Map initialisieren, bevor login() verwendet wird
 _USERS = init_users()
 
 def login(user: str, pwd: str) -> bool:
@@ -431,44 +431,3 @@ elif mode == "Regeln verwalten":
         st.info("Es gibt ungespeicherte Änderungen.")
 
 # --- Regeln lernen ---
-elif mode == "Regeln lernen":
-    st.title("🧠 Regeln lernen")
-    uploaded = st.file_uploader("Excel (Spalte 'Feedback')", type=["xlsx"], key="learn")
-    if uploaded:
-        try:
-            df_learn = pd.read_excel(uploaded)
-        except Exception as e:
-            st.error(f"Fehler beim Einlesen der Excel-Datei: {e}")
-            st.stop()
-
-        if 'Feedback' in df_learn.columns:
-            unmatched: dict[str, int] = {}
-            for fb in df_learn['Feedback'].astype(str):
-                if categorize_series(pd.Series([fb]), patterns).iloc[0] == 'Sonstiges':
-                    tokens = re.findall(r"\w+", fb.lower())
-                    for n in (1, 2, 3):
-                        for i in range(len(tokens) - n + 1):
-                            phrase = " ".join(tokens[i:i+n])
-                            if len(phrase) < 4:
-                                continue
-                            unmatched[phrase] = unmatched.get(phrase, 0) + 1
-
-            suggestions = sorted(unmatched.items(), key=lambda x: x[1], reverse=True)[:30]
-            st.subheader("🔍 Vorschläge aus 'Sonstiges'")
-            if not suggestions:
-                st.info("Keine Vorschläge gefunden. Lade mehr/anderes Feedback hoch.")
-            for idx, (phrase, cnt) in enumerate(suggestions):
-                c1, c2 = st.columns([4, 2])
-                c1.write(f"{phrase} ({cnt}×)")
-                choice = c2.selectbox("Kategorie", ["Ignorieren"] + sorted(rules.keys()), key=f"learn_{idx}")
-                if choice != "Ignorieren":
-                    rules.setdefault(choice, []).append(phrase)
-                    # Stelle sicher, dass Ordner existiert
-                    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-                    with open(LOG_PATH, 'a', encoding='utf-8') as f:
-                        f.write(f"{datetime.datetime.now().isoformat()};{phrase};{choice}\n")
-                    save_rules(rules)
-                    st.success(f"'{phrase}' zu '{choice}' hinzugefügt.")
-        else:
-            st.error("Spalte 'Feedback' nicht gefunden.")
-``
