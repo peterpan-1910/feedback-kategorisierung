@@ -214,6 +214,7 @@ DEFAULT_RULES: dict[str, list[str]] = {
     ]
 }
 
+
 # --- Nutzerverwaltung ---
 @st.cache_data(show_spinner=False)
 def init_users() -> dict[str, str]:
@@ -223,12 +224,8 @@ def init_users() -> dict[str, str]:
     if username and pw_hash:
         return {username: pw_hash}
     # Default
-    return {"admin2025": hashlib.sha256("data2025".encode()).hexdigest()}
+    return {"admin2026": hashlib.sha256("admin2026".encode()).hexdigest()}
 
-_USERS = init_users()
-
-def login(user: str, pwd: str) -> bool:
-    return _USERS.get(user) == hashlib.sha256(pwd.encode()).hexdigest()
 
 # --- GitHub Push ---
 def push_rules_to_github(rules: dict[str, list[str]]) -> tuple[bool, str]:
